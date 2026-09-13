@@ -1,0 +1,7 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# Kyverno ClusterPolicies. Requires Kyverno to be installed first
+# (https://kyverno.io/docs/installation/) — the CRDs must exist before these sync.
+resources:
+  - restrict-to-golden-registry.yaml
+  - verify-golden-signatures.yaml

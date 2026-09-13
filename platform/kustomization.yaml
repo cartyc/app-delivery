@@ -6,3 +6,4 @@ kind: Kustomization
 resources:
   - namespaces
   - istio
+  - kyverno # Kyverno ClusterPolicies (requires Kyverno installed; see kyverno/README.md)

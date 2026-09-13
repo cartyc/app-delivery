@@ -9,6 +9,7 @@ metadata:
   name: demo-dev
   labels:
     istio-injection: enabled
+    enforcement: golden # Kyverno golden-registry restriction applies here
     pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted
@@ -19,6 +20,7 @@ metadata:
   name: demo-prod
   labels:
     istio-injection: enabled
+    enforcement: golden # Kyverno golden-registry restriction applies here
     pod-security.kubernetes.io/enforce: baseline
     pod-security.kubernetes.io/audit: restricted
     pod-security.kubernetes.io/warn: restricted

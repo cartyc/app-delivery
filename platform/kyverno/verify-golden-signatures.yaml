@@ -1,0 +1,51 @@
+# Cryptographically verify golden image signatures at admission (cosign keyless),
+# per https://edu.chainguard.dev/chainguard/containers/security-and-compliance/enforcement/kyverno/#verify-image-signatures
+#
+# Scoped by IMAGE REFERENCE, not namespace: it only acts on golden mirror images
+# (cgr-sync preserves Chainguard's signatures), wherever they run, and ignores
+# everything else — so GKE/system images are untouched. In-house apps/* images
+# are built by your own pipeline; add a second rule verifying them against your
+# CI's signing identity once you sign them.
+#
+# Staged as Audit — flip to Enforce once the Policy Reports confirm golden images
+# verify cleanly in your cluster.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-golden-image-signatures
+  annotations:
+    policies.kyverno.io/title: Verify golden image signatures
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/description: >-
+      Verify that golden (Chainguard-signed, cgr-sync-mirrored) images were
+      signed by this org's Chainguard identity before they run.
+spec:
+  validationFailureAction: Audit
+  webhookTimeoutSeconds: 30
+  background: false # verifyImages cannot run in background mode
+  rules:
+    - name: verify-chainguard-keyless-signature
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "us-central1-docker.pkg.dev/gc-golden-demo/golden/*"
+          required: true
+          mutateDigest: true # pin the verified digest into the pod spec
+          verifyDigest: true
+          attestors:
+            - count: 1
+              entries:
+                - keyless:
+                    issuer: "https://issuer.enforce.dev"
+                    # Your org's Chainguard signing identities (catalog syncer +
+                    # apko builder) live under your org UIDP. setup.sh injects it.
+                    subjectRegExp: "^https://issuer.enforce.dev/ORG_UIDP_PLACEHOLDER/.*$"
+                    # Chainguard images verify against the public Sigstore trust
+                    # root. If your org uses a private Sigstore, set roots/rekor.
+                    rekor:
+                      url: https://rekor.sigstore.dev

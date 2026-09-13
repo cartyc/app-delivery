@@ -1,0 +1,44 @@
+# Admission twin of the conftest image-source gate: in golden-enforced
+# namespaces, every container image must come from the golden registry.
+# Scoped by namespace LABEL (enforcement: golden) so GKE/system namespaces
+# (kube-system, istio-system, gke-managed) are never affected.
+#
+# Staged as Audit — flip validationFailureAction to Enforce once the Policy
+# Reports show no unexpected violations (same discipline as the registry/cooldown
+# policies in golden-image).
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: restrict-to-golden-registry
+  annotations:
+    policies.kyverno.io/title: Restrict images to the golden registry
+    policies.kyverno.io/severity: high
+    policies.kyverno.io/category: Supply Chain Security
+    policies.kyverno.io/description: >-
+      Every container in a golden-enforced namespace must pull from the golden
+      registry (the cgr-sync destination). Blocks arbitrary/public images.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: images-from-golden-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaceSelector:
+                matchLabels:
+                  enforcement: golden
+      validate:
+        message: >-
+          Images in this namespace must come from the golden registry
+          (us-central1-docker.pkg.dev/gc-golden-demo/).
+        pattern:
+          spec:
+            =(ephemeralContainers):
+              - image: "us-central1-docker.pkg.dev/gc-golden-demo/*"
+            =(initContainers):
+              - image: "us-central1-docker.pkg.dev/gc-golden-demo/*"
+            containers:
+              - image: "us-central1-docker.pkg.dev/gc-golden-demo/*"

@@ -48,11 +48,20 @@ at gate time) or isn't pinned. It's the delivery-side mirror of golden-image's
 registry policies:
 
 - **golden-image** decides *what approved images exist*.
-- **app-delivery** enforces *only those get deployed* — at PR time (conftest) and,
-  in-cluster, alongside your `cluster-ops` Kyverno admission policies.
+- **app-delivery** enforces *only those get deployed* — at PR time (conftest) and
+  at admission (Kyverno, `platform/kyverno/`).
 
 Plus baseline hardening (`workload_security.rego`): `runAsNonRoot`, no privilege
 escalation, resources set.
+
+### In-cluster enforcement (Kyverno)
+`platform/kyverno/` carries the admission twin of the CI gate:
+**`restrict-to-golden-registry`** (images in golden-enforced namespaces must come
+from the golden registry) and **`verify-golden-image-signatures`** (cosign
+keyless verification of golden images against your org's Chainguard identity —
+[Chainguard's Kyverno guide](https://edu.chainguard.dev/chainguard/containers/security-and-compliance/enforcement/kyverno/#verify-image-signatures)).
+Both stage as **Audit**, flip to **Enforce** once Policy Reports are clean. Needs
+Kyverno installed + `setup.sh --cgr-org-uidp`. See `platform/kyverno/README.md`.
 
 ## ArgoCD (app-of-apps)
 
