@@ -7,6 +7,9 @@ This is meant to run as a compliment to the [`golden-image`](https://github.com/
 ## What lives here
 
 ```
+cluster/                     provision + bootstrap the target cluster
+  terraform/                  GKE + Workload Identity + Artifact Registry (IaC)
+  bootstrap/                  install ArgoCD on golden images → hand off to app-of-apps
 config/                      ← the ONLY files a fork edits (see docs/CONFIG.md)
   environments/{dev,prod}.yaml  per-env: registry, domain, namespace, per-app image pin
   thirdparty/<name>-<env>.yaml  one file per third-party chart instance
@@ -50,9 +53,25 @@ Kyverno installed; the signature policy reads your org UIDP from a ConfigMap
 created out of Git from `$CHAINGUARD_ORG_UIDP` (`scripts/apply-signing-config.sh`).
 See `platform/kyverno/README.md`.
 
+## Cluster: provision + bootstrap
+
+Stand up the target GKE cluster and its platform, then GitOps takes over:
+
+```bash
+cd cluster/terraform && cp terraform.tfvars.example terraform.tfvars   # edit
+terraform init && terraform apply          # GKE + WIF + Artifact Registry
+eval "$(terraform output -raw cluster_get_credentials)"                # kubeconfig
+cd ../.. && ./cluster/bootstrap/bootstrap.sh                           # ArgoCD → app-of-apps
+```
+
+Terraform outputs feed the rest: `golden_registry`/`apps_registry` → `config/`,
+`wif_provider`/`ci_service_account` → Renovate secrets, `kyverno_reader_service_account`
+→ the Kyverno KSA annotation. See `cluster/terraform/README.md` +
+`cluster/bootstrap/README.md`.
+
 ## ArgoCD (app-of-apps)
 
-All delivery CRs live here. Bootstrap once:
+All delivery CRs live here. Bootstrap once (or via `cluster/bootstrap`):
 
 ```bash
 kubectl apply -f platform/argocd/appproject.yaml

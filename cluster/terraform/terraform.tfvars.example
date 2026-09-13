@@ -1,0 +1,11 @@
+# Copy to terraform.tfvars and edit. (terraform.tfvars is gitignored.)
+project_id  = "gc-golden-demo"
+region      = "us-central1"
+cluster_name = "golden"
+github_repo = "cartyc/app-delivery"
+
+# golden_repo_name = "golden"
+# apps_repo_name   = "apps"
+# node_machine_type = "e2-standard-4"
+# min_nodes = 1
+# max_nodes = 3

@@ -1,0 +1,18 @@
+# ArgoCD installed on golden (Chainguard) images. Consumed by
+# cluster/bootstrap/bootstrap.sh. The golden registry is rewritten by
+# scripts/setup.sh along with the rest of the repo.
+global:
+  image:
+    repository: us-central1-docker.pkg.dev/gc-golden-demo/golden/argocd
+    tag: "v3.1"
+redis:
+  image:
+    repository: us-central1-docker.pkg.dev/gc-golden-demo/golden/redis
+    tag: "8.0"
+dex:
+  enabled: false # keep the demo minimal; wire SSO later
+configs:
+  params:
+    # TLS terminates at the Istio ingress gateway; run the API server plaintext
+    # behind it for the demo. Remove for a hardened setup.
+    server.insecure: true

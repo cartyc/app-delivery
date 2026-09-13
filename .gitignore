@@ -5,3 +5,14 @@ apps/*/src/hello
 
 # macOS
 .DS_Store
+
+# terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
+override.tf
+override.tf.json
