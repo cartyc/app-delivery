@@ -11,6 +11,11 @@ This is the runtime end of a three-repo supply chain:
 | [`golden-image`](https://github.com/cartyc/golden-image) | Platform-engineering **bakery**: catalog, registry/library policies, intake — produces the approved golden artifacts. |
 | **`app-delivery`** (this repo) | Deploys in-house apps **onto** those golden artifacts, with Istio/ArgoCD/etc. config, and **enforces that only golden images ship**. |
 
+> **Public reference repo.** No secrets are committed — credentials are GitHub
+> Actions secrets/variables, and infra identifiers are placeholders you set with
+> `scripts/setup.sh`. Registry/GCP/domain values *do* land in the manifests
+> (GitOps needs them; access is IAM-controlled, not secret). Licensed Apache-2.0.
+
 ## What lives here
 
 ```

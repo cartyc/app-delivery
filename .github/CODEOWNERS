@@ -1,0 +1,11 @@
+# Governance ownership. Replace @cartyc with your real teams before relying on
+# required-review branch protection.
+#
+# Platform Engineering owns the guardrails + shared platform config:
+/policy/                 @cartyc
+/platform/               @cartyc
+/renovate.json           @cartyc
+/.github/                @cartyc
+
+# App teams own their own app directories (example — scope per team):
+/apps/                   @cartyc
