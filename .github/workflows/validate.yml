@@ -1,0 +1,30 @@
+# PR gate: render every kustomize target, schema-validate, and enforce the
+# golden-registry + workload-hardening policies. No cluster required.
+name: Validate
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Install tools
+        run: |
+          set -euo pipefail
+          # kustomize
+          curl -sfL https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash
+          sudo mv kustomize /usr/local/bin/
+          # kubeconform
+          curl -sfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          sudo mv kubeconform /usr/local/bin/
+          # conftest
+          curl -sfL https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz | tar xz conftest
+          sudo mv conftest /usr/local/bin/
+
+      - name: Render + validate + gate
+        run: ./scripts/validate.sh

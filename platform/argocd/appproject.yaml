@@ -1,0 +1,32 @@
+# AppProject scoping what this repo's Applications may deploy. Applied once at
+# bootstrap (alongside app-of-apps.yaml), then git-managed.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: demo
+  namespace: argocd
+spec:
+  description: In-house apps + platform config delivered from app-delivery
+  sourceRepos:
+    - https://github.com/cartyc/app-delivery.git
+    # Helm repos used by the third-party lane (add as needed):
+    - https://charts.bitnami.com/bitnami
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: demo-dev
+    - server: https://kubernetes.default.svc
+      namespace: demo-prod
+    - server: https://kubernetes.default.svc
+      namespace: istio-ingress
+    - server: https://kubernetes.default.svc
+      namespace: istio-system
+    - server: https://kubernetes.default.svc
+      namespace: argocd
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: security.istio.io
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

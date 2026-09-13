@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: demo-prod
+resources:
+  - ../../base
+  - pdb.yaml
+
+# Prod pins by DIGEST, not tag — the golden image is immutable + verifiable.
+# Replace the digest with the one promoted from dev (see docs/PROMOTION.md).
+images:
+  - name: us-central1-docker.pkg.dev/gc-golden-demo/apps/hello
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+
+replicas:
+  - name: hello
+    count: 3
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: hello
+      spec:
+        template:
+          spec:
+            containers:
+              - name: hello
+                env:
+                  - name: APP_ENV
+                    value: prod
+                  - name: APP_VERSION
+                    value: "0.1.0"
+  - target:
+      kind: VirtualService
+      name: hello
+    patch: |-
+      - op: replace
+        path: /spec/hosts/0
+        value: hello.example.com

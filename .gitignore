@@ -1,0 +1,4 @@
+# local render output / build artifacts
+/tmp/
+*.rendered.yaml
+apps/*/src/hello

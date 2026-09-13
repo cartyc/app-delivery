@@ -1,0 +1,36 @@
+# Third-party Helm lane. Multi-source Application: the chart comes from an
+# upstream Helm repo, but its values live IN THIS REPO (reviewable, gated) and
+# override every image to the golden Artifact Registry mirror. This is how you
+# run third-party software on golden images without vendoring the chart.
+#
+# NOTE: verify chart<->image compatibility. Chainguard ships Bitnami-compatible
+# variants for many charts; if the plain CG image's entrypoint differs from what
+# the chart expects, use the `-bitnami` variant or add a command override.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: redis
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: demo
+  sources:
+    - repoURL: https://charts.bitnami.com/bitnami
+      chart: redis
+      targetRevision: 20.5.0
+      helm:
+        valueFiles:
+          - $values/third-party/redis/values.yaml
+    - repoURL: https://github.com/cartyc/app-delivery.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false

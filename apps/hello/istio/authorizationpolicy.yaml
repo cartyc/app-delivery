@@ -1,0 +1,20 @@
+# Default-deny for the hello workload: only allow traffic that arrived through
+# the Istio ingress gateway. Combined with namespace STRICT mTLS
+# (platform/istio/mesh-peerauth.yaml), east-west calls must be explicitly allowed.
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: hello-allow-ingress
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hello
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals:
+              - cluster.local/ns/istio-ingress/sa/istio-ingressgateway
+      to:
+        - operation:
+            ports: ["8080"]

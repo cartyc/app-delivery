@@ -1,0 +1,28 @@
+# Root "app-of-apps": the single Application you apply at bootstrap. It syncs the
+# applications/ directory, so every child Application (platform + each app + each
+# third-party chart) is itself managed by Git from then on.
+#
+#   kubectl apply -f platform/argocd/appproject.yaml
+#   kubectl apply -f platform/argocd/app-of-apps.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: demo
+  source:
+    repoURL: https://github.com/cartyc/app-delivery.git
+    targetRevision: main
+    path: platform/argocd/applications
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

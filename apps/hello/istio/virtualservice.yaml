@@ -1,0 +1,17 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: hello
+spec:
+  # Attaches to the shared ingress Gateway (platform/istio/gateway.yaml).
+  gateways:
+    - istio-ingress/public-gateway
+  hosts:
+    # Overlays patch this to the per-env FQDN (hello.dev.<domain> / hello.<domain>).
+    - hello.example.com
+  http:
+    - route:
+        - destination:
+            host: hello.default.svc.cluster.local
+            port:
+              number: 80

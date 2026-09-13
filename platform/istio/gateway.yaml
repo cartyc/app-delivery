@@ -1,0 +1,30 @@
+# Shared ingress Gateway that app VirtualServices attach to. On GKE this fronts
+# an external L4 LB (or ASM's managed ingress). TLS is expected to terminate
+# here — wire credentialName to a cert-manager Secret (or a Google-managed cert
+# via the GKE Gateway API if you prefer that over Istio ingress).
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: public-gateway
+  namespace: istio-ingress
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 443
+        name: https
+        protocol: HTTPS
+      tls:
+        mode: SIMPLE
+        credentialName: public-gateway-cert # cert-manager Secret in istio-ingress
+      hosts:
+        - "*.example.com"
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - "*.example.com"
+      tls:
+        httpsRedirect: true

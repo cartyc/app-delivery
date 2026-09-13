@@ -1,0 +1,32 @@
+# Values for the upstream redis chart, overriding all images to the golden
+# Artifact Registry mirror (the cgr-sync destination). Reviewed + gated here in
+# app-delivery; consumed by platform/argocd/applications/thirdparty-redis.yaml.
+global:
+  # Point the whole chart at the golden registry instead of docker.io/bitnami.
+  imageRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+
+image:
+  # Use the Bitnami-compatible Chainguard redis so the chart's entrypoint works.
+  repository: redis-bitnami
+  tag: "8.0"
+
+architecture: standalone
+auth:
+  enabled: true
+  existingSecret: redis-auth # provide out-of-band; don't commit secrets
+
+master:
+  persistence:
+    enabled: true
+    size: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault

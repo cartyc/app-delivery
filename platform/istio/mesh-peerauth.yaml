@@ -1,0 +1,12 @@
+# Mesh-wide STRICT mTLS: every sidecar-to-sidecar call must be mutually
+# authenticated. Lives in the Istio root namespace (istio-system) so it applies
+# mesh-wide. Combined with per-app AuthorizationPolicies (default-deny), this is
+# a zero-trust east-west posture.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: istio-system
+spec:
+  mtls:
+    mode: STRICT

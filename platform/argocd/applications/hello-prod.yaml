@@ -1,0 +1,20 @@
+# Prod is deliberately NOT auto-synced — a human promotes by merging a digest
+# bump and clicking sync (or via an approval gate), mirroring the golden-image
+# "human in the loop for anything that ships" posture.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hello-prod
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: demo
+  source:
+    repoURL: https://github.com/cartyc/app-delivery.git
+    targetRevision: main
+    path: apps/hello/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo-prod
+  syncPolicy: {}

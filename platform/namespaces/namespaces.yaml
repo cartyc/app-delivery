@@ -1,0 +1,31 @@
+# Application + ingress namespaces. Each app namespace gets Istio sidecar
+# injection and Pod Security Admission labels. enforce=baseline keeps Istio
+# sidecar injection working; audit/warn=restricted surfaces stricter violations
+# without blocking (switch enforce->restricted if you run Istio ambient, which
+# has no sidecar).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-dev
+  labels:
+    istio-injection: enabled
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: demo-prod
+  labels:
+    istio-injection: enabled
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: istio-ingress
+  labels:
+    istio-injection: enabled

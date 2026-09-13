@@ -1,0 +1,14 @@
+# Per-environment knobs (documentation + single source of truth for the values
+# the overlays encode). Kept declarative so a renderer/CI can read them; today
+# the overlays carry these values directly.
+env: dev
+gke:
+  project: gc-golden-demo
+  region: us-central1
+  cluster: golden-dev
+golden_registry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+apps_registry: us-central1-docker.pkg.dev/gc-golden-demo/apps
+base_domain: dev.example.com
+defaults:
+  replicas: 1
+  autosync: true
