@@ -59,6 +59,7 @@ PAIRS=(
   "us-central1-docker.pkg.dev/gc-golden-demo/apps|${GAR}/${APPS_REPO}"
   "us-central1-docker.pkg.dev/gc-golden-demo|${GAR}"
   "cgr.dev/gc-golden-demo|cgr.dev/${CGR_ORG}"
+  "cgrOrg: gc-golden-demo|cgrOrg: ${CGR_ORG}"
   "region: us-central1|region: ${GAR_REGION}"
   "project: gc-golden-demo|project: ${GAR_PROJECT}"
   "cluster: golden-dev|cluster: ${DEV_CLUSTER}"
