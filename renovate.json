@@ -1,0 +1,54 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard"
+  ],
+  "labels": ["dependencies"],
+  "schedule": ["before 6am on monday"],
+  "prConcurrentLimit": 5,
+  "ignorePaths": [
+    "apps/*/overlays/prod/**"
+  ],
+  "dockerfile": {
+    "description": "Golden base images use MOVING tags (daily rebuild) — leave them to golden-image, don't let Renovate pin/bump the Dockerfile FROM lines.",
+    "enabled": false
+  },
+  "kubernetes": {
+    "description": "Raw k8s manifests carry no upstream images to track (app images are pinned in overlays via the kustomize manager).",
+    "enabled": false
+  },
+  "argocd": {
+    "description": "Track the Helm chart version referenced by third-party ArgoCD Applications.",
+    "fileMatch": ["platform/argocd/applications/thirdparty-.*\\.ya?ml$"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "third-party/<name>/chart.env — the Helm chart version used by the validate.sh render + gate.",
+      "fileMatch": ["(^|/)third-party/.*/chart\\.env$"],
+      "matchStrings": [
+        "CHART_REPO=(?<registryUrl>\\S+)\\s+CHART_NAME=(?<depName>\\S+)\\s+CHART_VERSION=(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "helm"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "In-house app images pinned in the DEV overlays (golden apps registry). Auto-bump; prod is promoted by a human (docs/PROMOTION.md).",
+      "matchManagers": ["kustomize"],
+      "matchFileNames": ["apps/*/overlays/dev/kustomization.yaml"],
+      "groupName": "in-house app images",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "images"
+    },
+    {
+      "description": "Third-party Helm charts — group the ArgoCD Application + chart.env bump into one PR.",
+      "matchDatasources": ["helm"],
+      "groupName": "third-party charts",
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "charts"
+    }
+  ]
+}
