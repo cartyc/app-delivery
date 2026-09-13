@@ -16,8 +16,8 @@ jobs:
       - name: Install tools
         run: |
           set -euo pipefail
-          # kustomize
-          curl -sfL https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh | bash
+          # kustomize (pinned release binary — not a curl|bash of a mutable script)
+          curl -sfL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz" | tar xz kustomize
           sudo mv kustomize /usr/local/bin/
           # kubeconform
           curl -sfL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
@@ -25,8 +25,9 @@ jobs:
           # conftest
           curl -sfL https://github.com/open-policy-agent/conftest/releases/download/v0.56.0/conftest_0.56.0_Linux_x86_64.tar.gz | tar xz conftest
           sudo mv conftest /usr/local/bin/
-          # helm (renders the third-party charts for the image gate)
-          curl -sfL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          # helm (pinned release tarball — renders third-party charts for the gate)
+          curl -sfL https://get.helm.sh/helm-v3.16.3-linux-amd64.tar.gz | tar xz --strip-components=1 linux-amd64/helm
+          sudo mv helm /usr/local/bin/
           # yq (reads the central config in scripts/validate.sh)
           sudo curl -sfL https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -o /usr/local/bin/yq && sudo chmod +x /usr/local/bin/yq
 

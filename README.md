@@ -1,20 +1,8 @@
-# app-delivery
+# Platform Admin K8s Config
 
-GitOps delivery of in-house applications — and the Kubernetes-native platform
-config they need — running on **golden image artifacts**, targeting **GKE**.
+Intent of this repo is to show a potential delivery path for K8s configs to a target cluster. This demo using GKE but it can use a target K8s Cluster of your choice.
 
-This is the runtime end of a three-repo supply chain:
-
-| Repo | Role |
-|---|---|
-| [`image-syncer`](https://github.com/cartyc/image-syncer) (`cgr-sync`) | Mirrors Chainguard images into your private registry (Artifact Registry). |
-| [`golden-image`](https://github.com/cartyc/golden-image) | Platform-engineering **bakery**: catalog, registry/library policies, intake — produces the approved golden artifacts. |
-| **`app-delivery`** (this repo) | Deploys in-house apps **onto** those golden artifacts, with Istio/ArgoCD/etc. config, and **enforces that only golden images ship**. |
-
-> **Public reference repo.** No secrets are committed — credentials are GitHub
-> Actions secrets/variables, and infra identifiers are placeholders you set with
-> `scripts/setup.sh`. Registry/GCP/domain values *do* land in the manifests
-> (GitOps needs them; access is IAM-controlled, not secret). Licensed Apache-2.0.
+This is meant to run as a compliment to the [`golden-image`](https://github.com/cartyc/golden-image) repo where we control the flow of images into our trusted container Registry.
 
 ## What lives here
 
@@ -36,11 +24,8 @@ policy/conftest/             Rego gate (golden-registry-only + hardening)
 scripts/validate.sh          run the gate locally
 ```
 
-Registry + domain are **not** baked into the app manifests — the ApplicationSets
-inject them from `config/` at sync time, and CI does the same when it renders.
-So a fork changes `config/`, not dozens of manifests. See **[docs/CONFIG.md](docs/CONFIG.md)**.
 
-## The golden-registry gate (why this repo has teeth)
+## The golden-registry gate
 
 `policy/conftest/image_source.rego` fails the build if **any** container image
 isn't from an approved golden registry (the allowlist is generated from `config/`
@@ -65,7 +50,7 @@ Kyverno installed + `setup.sh --cgr-org-uidp`. See `platform/kyverno/README.md`.
 
 ## ArgoCD (app-of-apps)
 
-All delivery CRs live here (not in golden-image). Bootstrap once:
+All delivery CRs live here. Bootstrap once:
 
 ```bash
 kubectl apply -f platform/argocd/appproject.yaml
@@ -85,22 +70,6 @@ auto-syncs; **prod is promote-by-merge + manual sync** (`autosync: false`).
    `platform/argocd/applications/appset-inhouse.yaml`.
 3. Add the image pin under `apps:` in each `config/environments/<env>.yaml`.
 4. `./scripts/validate.sh` — the gate must pass (golden registry, pinned, hardened).
-
-## Third-party Helm on golden images (upstream charts only)
-
-Use the **project's own chart**, never a vendor repackager (Bitnami etc.) —
-upstream charts expose plain `image.repository`/`image.tag`, so pointing them at
-Chainguard images is a clean per-component override (and the eventual
-all-Chainguard migration is a values change, not a chart fork).
-
-Add a `config/thirdparty/<name>-<env>.yaml` (chart repo/version, `goldenRegistry`,
-an `imageRepos` map of *chart image param → Chainguard image name*, and any
-literal `helmParams`) plus registry-agnostic values in
-`third-party/<name>/values.yaml`. The `thirdparty-charts` ApplicationSet renders
-the chart with those values and sets each image param to
-`<goldenRegistry>/<image>`. CI renders each chart the same way and runs the
-**image-source gate** — so a chart can only ship golden-registry images.
-Example: `metrics-server` (kubernetes-sigs). See `third-party/metrics-server/`.
 
 ## GKE notes
 
