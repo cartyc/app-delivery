@@ -5,6 +5,8 @@ resources:
   - deployment.yaml
   - service.yaml
   - ../istio
-commonLabels:
-  app.kubernetes.io/name: hello
-  app.kubernetes.io/managed-by: argocd
+labels:
+  - pairs:
+      app.kubernetes.io/name: hello
+      app.kubernetes.io/managed-by: argocd
+    includeSelectors: true
