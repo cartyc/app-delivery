@@ -2,3 +2,6 @@
 /tmp/
 *.rendered.yaml
 apps/*/src/hello
+
+# macOS
+.DS_Store
