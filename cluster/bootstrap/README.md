@@ -4,8 +4,13 @@ Run after `cluster/terraform` has provisioned the cluster and you've fetched
 credentials (`terraform output cluster_get_credentials`).
 
 ```bash
+export GOLDEN_REGISTRY="$(terraform -chdir=cluster/terraform output -raw golden_registry)"
 ./cluster/bootstrap/bootstrap.sh
 ```
+
+`GOLDEN_REGISTRY` (the terraform output / your `config/` `goldenRegistry`) is
+injected into the ArgoCD image repositories at install time — it isn't hardcoded
+in `argocd-values.yaml`.
 
 What it does:
 1. Installs **ArgoCD** on golden images (`argocd-values.yaml`).

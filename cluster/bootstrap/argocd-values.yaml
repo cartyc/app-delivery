@@ -1,13 +1,12 @@
 # ArgoCD installed on golden (Chainguard) images. Consumed by
-# cluster/bootstrap/bootstrap.sh. The golden registry is rewritten by
-# scripts/setup.sh along with the rest of the repo.
+# cluster/bootstrap/bootstrap.sh, which injects the image REPOSITORIES from
+# $GOLDEN_REGISTRY via --set — so no registry/project/repo is hardcoded here.
+# This file carries only registry-agnostic settings (tags + params).
 global:
   image:
-    repository: us-central1-docker.pkg.dev/gc-golden-demo/golden/argocd
     tag: "v3.1"
 redis:
   image:
-    repository: us-central1-docker.pkg.dev/gc-golden-demo/golden/redis
     tag: "8.0"
 dex:
   enabled: false # keep the demo minimal; wire SSO later

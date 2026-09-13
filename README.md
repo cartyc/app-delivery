@@ -61,6 +61,7 @@ Stand up the target GKE cluster and its platform, then GitOps takes over:
 cd cluster/terraform && cp terraform.tfvars.example terraform.tfvars   # edit
 terraform init && terraform apply          # GKE + WIF + Artifact Registry
 eval "$(terraform output -raw cluster_get_credentials)"                # kubeconfig
+export GOLDEN_REGISTRY="$(terraform output -raw golden_registry)"      # inject registry (not hardcoded)
 cd ../.. && ./cluster/bootstrap/bootstrap.sh                           # ArgoCD → app-of-apps
 ```
 

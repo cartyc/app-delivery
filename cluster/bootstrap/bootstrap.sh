@@ -10,6 +10,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.." # repo root
 
+# Golden registry (Chainguard-image mirror) — from the env, not hardcoded.
+# Use the terraform output: GOLDEN_REGISTRY="$(terraform -chdir=cluster/terraform output -raw golden_registry)"
+: "${GOLDEN_REGISTRY:?set GOLDEN_REGISTRY (e.g. terraform output golden_registry)}"
 ARGOCD_CHART_VERSION="${ARGOCD_CHART_VERSION:-7.7.7}"
 
 echo "==> Prerequisites"
@@ -28,7 +31,9 @@ helm repo update argo >/dev/null
 helm upgrade --install argocd argo/argo-cd \
   --namespace argocd --create-namespace \
   --version "$ARGOCD_CHART_VERSION" \
-  -f cluster/bootstrap/argocd-values.yaml
+  -f cluster/bootstrap/argocd-values.yaml \
+  --set global.image.repository="${GOLDEN_REGISTRY}/argocd" \
+  --set redis.image.repository="${GOLDEN_REGISTRY}/redis"
 kubectl -n argocd rollout status deploy/argocd-server --timeout=300s
 
 echo "==> Handing off to GitOps (AppProject + app-of-apps)"
