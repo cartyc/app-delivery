@@ -13,6 +13,12 @@
 # start Kyverno with --imagePullSecrets referencing a GAR pull secret. (Add
 # spec.imageRegistryCredentials / allowInsecureRegistry here only if needed.)
 #
+# ORG UIDP NOT HARDCODED: the signing-identity regexp reads the org UIDP from a
+# ConfigMap (golden-signing-config in the kyverno namespace) via a Kyverno
+# context, so no org identifier is committed here. Create that ConfigMap from an
+# env var at bootstrap:  scripts/apply-signing-config.sh  (reads $CHAINGUARD_ORG_UIDP).
+# Kyverno's ServiceAccount needs get/list on that ConfigMap.
+#
 # Staged as Audit — flip to Enforce once the Policy Reports confirm golden images
 # verify cleanly in your cluster.
 apiVersion: kyverno.io/v1
@@ -37,6 +43,12 @@ spec:
           - resources:
               kinds:
                 - Pod
+      # Load the org UIDP from a ConfigMap instead of hardcoding it.
+      context:
+        - name: signing
+          configMap:
+            name: golden-signing-config
+            namespace: kyverno
       verifyImages:
         - imageReferences:
             - "us-central1-docker.pkg.dev/gc-golden-demo/golden/*"
@@ -48,9 +60,9 @@ spec:
               entries:
                 - keyless:
                     issuer: "https://issuer.enforce.dev"
-                    # Your org's Chainguard signing identities (catalog syncer +
-                    # apko builder) live under your org UIDP. setup.sh injects it.
-                    subjectRegExp: "^https://issuer.enforce.dev/ORG_UIDP_PLACEHOLDER/.*$"
+                    # Org signing identities (catalog syncer + apko builder) live
+                    # under the org UIDP, injected from the ConfigMap at eval time.
+                    subjectRegExp: "^https://issuer.enforce.dev/{{ signing.data.orgUidp }}/.*$"
                     # Chainguard images verify against the public Sigstore trust
                     # root. If your org uses a private Sigstore, set roots/rekor.
                     rekor:

@@ -9,7 +9,6 @@
 #     --gar-project my-gcp-project \
 #     --domain    apps.example.com \
 #     [--cgr-org my-chainguard-org] \        # cgr.dev source org (default: gar-project)
-#     [--cgr-org-uidp <uidp>] \              # org UIDP for the Kyverno signature policy
 
 #     [--golden-repo golden] [--apps-repo apps] \
 #     [--dev-cluster golden-dev] [--prod-cluster golden-prod] \
@@ -19,12 +18,11 @@ cd "$(dirname "$0")/.."
 
 # --- defaults ---
 GITHUB="" GAR_REGION="" GAR_PROJECT="" DOMAIN="" CGR_ORG=""
-CGR_ORG_UIDP="ORG_UIDP_PLACEHOLDER" # left as placeholder unless --cgr-org-uidp given
 GOLDEN_REPO="golden" APPS_REPO="apps"
 DEV_CLUSTER="golden-dev" PROD_CLUSTER="golden-prod"
 DRY_RUN="false"
 
-usage() { sed -n '2,16p' "$0"; exit "${1:-0}"; }
+usage() { sed -n '2,15p' "$0"; exit "${1:-0}"; }
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -33,7 +31,6 @@ while [ $# -gt 0 ]; do
     --gar-project)  GAR_PROJECT="$2"; shift 2;;
     --domain)       DOMAIN="$2"; shift 2;;
     --cgr-org)      CGR_ORG="$2"; shift 2;;
-    --cgr-org-uidp) CGR_ORG_UIDP="$2"; shift 2;;
     --golden-repo)  GOLDEN_REPO="$2"; shift 2;;
     --apps-repo)    APPS_REPO="$2"; shift 2;;
     --dev-cluster)  DEV_CLUSTER="$2"; shift 2;;
@@ -70,7 +67,6 @@ PAIRS=(
   "cluster: golden-prod|cluster: ${PROD_CLUSTER}"
   "cartyc/app-delivery|${GITHUB}"
   "example.com|${DOMAIN}"
-  "ORG_UIDP_PLACEHOLDER|${CGR_ORG_UIDP}"
 )
 
 # Every tracked text file except this script (which holds the placeholders).

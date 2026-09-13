@@ -19,8 +19,13 @@ policies (never enforce blind).
 - **Kyverno installed** (`https://kyverno.io/docs/installation/`) — the CRDs must
   exist before these ClusterPolicies sync. (Install it on Chainguard `kyverno`
   images via the upstream chart, following the third-party lane.)
-- **`setup.sh --cgr-org-uidp <uidp>`** — the signature policy's `subjectRegExp`
-  needs your org UIDP; without it the policy keeps a placeholder and won't verify.
+- **Org UIDP via env var (not committed).** The signature policy reads your org
+  UIDP from a ConfigMap (`golden-signing-config` in the `kyverno` namespace) via
+  a Kyverno `context` — so no org identifier is in Git. Create it from your env:
+  ```bash
+  CHAINGUARD_ORG_UIDP=<your-org-uidp> ./scripts/apply-signing-config.sh
+  ```
+  Kyverno's ServiceAccount needs `get`/`list` on that ConfigMap.
 
 ## Signature verification notes
 - Golden images keep their Chainguard signatures through `cgr-sync` (it preserves

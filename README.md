@@ -46,7 +46,9 @@ from the golden registry) and **`verify-golden-image-signatures`** (cosign
 keyless verification of golden images against your org's Chainguard identity —
 [Chainguard's Kyverno guide](https://edu.chainguard.dev/chainguard/containers/security-and-compliance/enforcement/kyverno/#verify-image-signatures)).
 Both stage as **Audit**, flip to **Enforce** once Policy Reports are clean. Needs
-Kyverno installed + `setup.sh --cgr-org-uidp`. See `platform/kyverno/README.md`.
+Kyverno installed; the signature policy reads your org UIDP from a ConfigMap
+created out of Git from `$CHAINGUARD_ORG_UIDP` (`scripts/apply-signing-config.sh`).
+See `platform/kyverno/README.md`.
 
 ## ArgoCD (app-of-apps)
 
