@@ -4,6 +4,11 @@
 global:
   # Point the whole chart at the golden registry instead of docker.io/bitnami.
   imageRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+  security:
+    # Bitnami charts (2025+ "Secure Images") refuse any non-Bitnami image unless
+    # this is set. We deliberately run the golden-registry mirror, so opt in —
+    # provenance is enforced instead by the image-source gate in CI + Kyverno.
+    allowInsecureImages: true
 
 image:
   # Use the Bitnami-compatible Chainguard redis so the chart's entrypoint works.

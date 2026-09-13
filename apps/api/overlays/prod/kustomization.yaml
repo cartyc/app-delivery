@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: demo-prod
+resources:
+  - ../../base
+  - pdb.yaml
+
+images:
+  - name: us-central1-docker.pkg.dev/gc-golden-demo/apps/api
+    digest: sha256:0000000000000000000000000000000000000000000000000000000000000000
+
+replicas:
+  - name: api
+    count: 3
+
+patches:
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: api
+      spec:
+        template:
+          spec:
+            containers:
+              - name: api
+                env:
+                  - name: APP_ENV
+                    value: prod
+                  - name: APP_VERSION
+                    value: "0.1.0"
+  - target:
+      kind: VirtualService
+      name: api
+    patch: |-
+      - op: replace
+        path: /spec/hosts/0
+        value: api.example.com

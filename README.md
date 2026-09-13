@@ -75,6 +75,10 @@ a multi-source ArgoCD Application pulls the upstream chart but takes its values
 chart↔image compatibility (use Chainguard `-bitnami` variants where the chart
 expects the Bitnami entrypoint).
 
+CI renders every third-party chart (`helm template` from `chart.env` + `values.yaml`)
+and runs the **image-source gate** on the output — so a chart can only ship
+golden-registry images too, not just the in-house apps.
+
 ## GKE notes
 
 - **Registry:** the golden Artifact Registry mirror (cgr-sync's `DEST_REGISTRY`).

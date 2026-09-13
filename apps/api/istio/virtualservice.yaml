@@ -1,0 +1,15 @@
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: api
+spec:
+  gateways:
+    - istio-ingress/public-gateway
+  hosts:
+    - api.example.com
+  http:
+    - route:
+        - destination:
+            host: api.default.svc.cluster.local
+            port:
+              number: 80
