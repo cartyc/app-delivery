@@ -7,8 +7,9 @@ spec:
   gateways:
     - istio-ingress/public-gateway
   hosts:
-    # Overlays patch this to the per-env FQDN (hello.dev.<domain> / hello.<domain>).
-    - hello.example.com
+    # Placeholder — the inhouse ApplicationSet patches this to {{app}}.{{baseDomain}}
+    # per environment (from config/environments). CI does the same when rendering.
+    - set-by-config.invalid
   http:
     - route:
         - destination:

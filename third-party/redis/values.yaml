@@ -1,15 +1,8 @@
-# Values for the upstream redis chart, overriding all images to the golden
-# Artifact Registry mirror (the cgr-sync destination). Reviewed + gated here in
-# app-delivery; consumed by platform/argocd/applications/thirdparty-redis.yaml.
-global:
-  # Point the whole chart at the golden registry instead of docker.io/bitnami.
-  imageRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
-  security:
-    # Bitnami charts (2025+ "Secure Images") refuse any non-Bitnami image unless
-    # this is set. We deliberately run the golden-registry mirror, so opt in —
-    # provenance is enforced instead by the image-source gate in CI + Kyverno.
-    allowInsecureImages: true
-
+# Values for the upstream redis chart. REGISTRY-AGNOSTIC on purpose: the golden
+# registry (global.imageRegistry) and the Bitnami "Secure Images" opt-in
+# (global.security.allowInsecureImages) are injected as Helm parameters per
+# environment by the third-party ApplicationSet (from config/thirdparty/*.yaml),
+# so this file is portable across forks. Reviewed + gated here in app-delivery.
 image:
   # Use the Bitnami-compatible Chainguard redis so the chart's entrypoint works.
   repository: redis-bitnami

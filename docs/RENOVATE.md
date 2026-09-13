@@ -8,13 +8,14 @@ so automation can't smuggle in a non-golden image.
 
 | Thing | Where | Manager | Behaviour |
 |---|---|---|---|
-| In-house app image tags | `apps/*/overlays/dev/kustomization.yaml` (`images.newTag`) | kustomize | Auto-bump, grouped as "in-house app images" |
-| Third-party chart version | `platform/argocd/applications/thirdparty-*.yaml` + `third-party/*/chart.env` | argocd + custom regex | Auto-bump, grouped as "third-party charts" |
+| In-house app image tags | `config/environments/dev.yaml` (annotated `tag:`) | custom regex | Auto-bump, grouped as "in-house app images" |
+| Third-party chart version | `config/thirdparty/*.yaml` (`chartVersion:`) | custom regex | Auto-bump, grouped as "third-party charts" |
 
 ## What it deliberately does **not** touch
 
-- **`apps/*/overlays/prod/**`** — prod pins by **digest** and is promoted by a
-  human (`docs/PROMOTION.md`). `ignorePaths` excludes it.
+- **prod image pins** (`config/environments/prod.yaml`, `apps.*.digest`) — prod
+  is promoted by a human (`docs/PROMOTION.md`); those lines carry no Renovate
+  annotation, so the custom manager skips them.
 - **`Dockerfile` `FROM` golden bases** — those use **moving tags** so every
   build gets golden-image's daily rebuild; pinning them would fight that. The
   `dockerfile` manager is disabled.

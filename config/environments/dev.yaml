@@ -1,0 +1,23 @@
+# Central per-environment config — the ONE file a fork edits per env.
+# Consumed by the in-house ApplicationSet (platform/argocd/applications/
+# appset-inhouse.yaml) and the CI gate (scripts/validate.sh). Registry + domain
+# live here, NOT in the app manifests, so the leaf kustomize stays generic and
+# portable across forks/clusters.
+env: dev
+namespace: demo-dev
+server: https://kubernetes.default.svc
+autosync: true
+repoURL: https://github.com/cartyc/app-delivery.git
+goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+appsRegistry: us-central1-docker.pkg.dev/gc-golden-demo/apps
+cgrOrg: gc-golden-demo
+baseDomain: dev.example.com
+# Per-app image pin for this env. dev pins by tag (Renovate bumps these);
+# prod pins by digest (promotion — see docs/PROMOTION.md).
+apps:
+  hello:
+    # renovate: datasource=docker depName=us-central1-docker.pkg.dev/gc-golden-demo/apps/hello
+    tag: "0.1.0"
+  api:
+    # renovate: datasource=docker depName=us-central1-docker.pkg.dev/gc-golden-demo/apps/api
+    tag: "0.1.0"

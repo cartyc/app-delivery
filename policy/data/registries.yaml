@@ -1,9 +1,0 @@
-# Registries an image is allowed to come from. This is the app-delivery analog
-# of golden-image's registry policies: only images baked by the golden pipeline
-# (and mirrored by cgr-sync into Artifact Registry) may be deployed.
-#
-# Keep these in sync with cgr-sync's DEST_REGISTRY and your GAR project.
-allowed_registries:
-  - "us-central1-docker.pkg.dev/gc-golden-demo/golden/" # golden mirror (runtime)
-  - "us-central1-docker.pkg.dev/gc-golden-demo/apps/"   # in-house app images
-  - "cgr.dev/gc-golden-demo/"                            # direct-from-Chainguard (build-time / opt)

@@ -1,0 +1,52 @@
+# Third-party charts ApplicationSet. One Application per file in
+# config/thirdparty/*.yaml. Multi-source: upstream chart + in-repo values, with
+# the golden registry injected as a Helm parameter (values.yaml stays
+# registry-agnostic). Add a chart by adding a config file — no manifest edits.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: thirdparty-charts
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/cartyc/app-delivery.git
+        revision: main
+        files:
+          - path: config/thirdparty/*.yaml
+  template:
+    metadata:
+      name: "{{.name}}-{{.env}}"
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: demo
+      sources:
+        - repoURL: "{{.chartRepo}}"
+          chart: "{{.chart}}"
+          targetRevision: "{{.chartVersion}}"
+          helm:
+            valueFiles:
+              - "$values/{{.valuesPath}}"
+            parameters:
+              - name: global.imageRegistry
+                value: "{{.goldenRegistry}}"
+              - name: global.security.allowInsecureImages
+                value: "true"
+        - repoURL: "{{.repoURL}}"
+          targetRevision: main
+          ref: values
+      destination:
+        server: "{{.server}}"
+        namespace: "{{.namespace}}"
+  templatePatch: |
+    spec:
+      syncPolicy:
+        {{- if .autosync }}
+        automated:
+          prune: true
+          selfHeal: true
+        {{- end }}

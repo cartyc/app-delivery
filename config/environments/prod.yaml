@@ -1,0 +1,14 @@
+env: prod
+namespace: demo-prod
+server: https://kubernetes.default.svc
+autosync: false # prod is promote-by-merge + manual sync
+repoURL: https://github.com/cartyc/app-delivery.git
+goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+appsRegistry: us-central1-docker.pkg.dev/gc-golden-demo/apps
+cgrOrg: gc-golden-demo
+baseDomain: example.com
+apps:
+  hello:
+    digest: "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  api:
+    digest: "sha256:0000000000000000000000000000000000000000000000000000000000000000"

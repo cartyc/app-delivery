@@ -4,10 +4,11 @@ Images flow one way — build once, promote by digest.
 
 1. **Build + push** the app image to the golden `apps/` Artifact Registry
    (`FROM` a golden base — see the app's `Dockerfile`). Tag it (e.g. `0.2.0`).
-2. **Dev** overlay pins the tag; `hello-dev` auto-syncs. Verify in `demo-dev`.
+2. **Dev** pins the tag in `config/environments/dev.yaml` (`apps.<app>.tag`);
+   `<app>-dev` auto-syncs. Verify in `demo-dev`.
 3. **Promote:** capture the digest that ran in dev and set it in
-   `apps/<app>/overlays/prod/kustomization.yaml` under `images: [...].digest`.
-   Prod pins by **digest**, never a moving tag.
+   `config/environments/prod.yaml` under `apps.<app>.digest`. Prod pins by
+   **digest**, never a moving tag.
 4. Open a PR — the Validate gate must pass (golden registry, pinned, hardened).
 5. Merge, then **manually sync** `hello-prod` in ArgoCD (prod is not auto-synced).
 

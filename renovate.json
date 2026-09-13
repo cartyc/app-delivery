@@ -8,43 +8,45 @@
   "labels": ["dependencies"],
   "schedule": ["before 6am on monday"],
   "prConcurrentLimit": 5,
-  "ignorePaths": [
-    "apps/*/overlays/prod/**"
-  ],
   "dockerfile": {
-    "description": "Golden base images use MOVING tags (daily rebuild) — leave them to golden-image, don't let Renovate pin/bump the Dockerfile FROM lines.",
+    "description": "Golden base images use MOVING tags (daily rebuild) — leave them to golden-image, don't pin the Dockerfile FROM lines.",
     "enabled": false
   },
-  "kubernetes": {
-    "description": "Raw k8s manifests carry no upstream images to track (app images are pinned in overlays via the kustomize manager).",
-    "enabled": false
-  },
+  "kubernetes": { "enabled": false },
   "argocd": {
-    "description": "Track the Helm chart version referenced by third-party ArgoCD Applications.",
-    "fileMatch": ["platform/argocd/applications/thirdparty-.*\\.ya?ml$"]
+    "description": "Chart versions live in config/thirdparty/*.yaml (the ApplicationSet templates them), not in the Application CR — so the argocd manager has nothing to read.",
+    "enabled": false
   },
   "customManagers": [
     {
       "customType": "regex",
-      "description": "third-party/<name>/chart.env — the Helm chart version used by the validate.sh render + gate.",
-      "fileMatch": ["(^|/)third-party/.*/chart\\.env$"],
+      "description": "In-house app image tags in the DEV env config (annotated). Prod pins by digest and is promoted by a human, so it carries no annotation and is left alone.",
+      "fileMatch": ["(^|/)config/environments/.*\\.ya?ml$"],
       "matchStrings": [
-        "CHART_REPO=(?<registryUrl>\\S+)\\s+CHART_NAME=(?<depName>\\S+)\\s+CHART_VERSION=(?<currentValue>\\S+)"
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+tag:\\s*\"(?<currentValue>[^\"]+)\""
+      ]
+    },
+    {
+      "customType": "regex",
+      "description": "Third-party Helm chart version in config/thirdparty/*.yaml.",
+      "fileMatch": ["(^|/)config/thirdparty/.*\\.ya?ml$"],
+      "matchStrings": [
+        "chartRepo:\\s*(?<registryUrl>\\S+)\\s+chart:\\s*(?<depName>\\S+)\\s+chartVersion:\\s*\"(?<currentValue>[^\"]+)\""
       ],
       "datasourceTemplate": "helm"
     }
   ],
   "packageRules": [
     {
-      "description": "In-house app images pinned in the DEV overlays (golden apps registry). Auto-bump; prod is promoted by a human (docs/PROMOTION.md).",
-      "matchManagers": ["kustomize"],
-      "matchFileNames": ["apps/*/overlays/dev/kustomization.yaml"],
+      "description": "In-house app images (dev env config). Auto-bump; prod is promoted by digest (docs/PROMOTION.md).",
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["config/environments/**"],
       "groupName": "in-house app images",
       "semanticCommitType": "chore",
       "semanticCommitScope": "images"
     },
     {
-      "description": "Third-party Helm charts — group the ArgoCD Application + chart.env bump into one PR.",
+      "description": "Third-party Helm charts.",
       "matchDatasources": ["helm"],
       "groupName": "third-party charts",
       "semanticCommitType": "chore",

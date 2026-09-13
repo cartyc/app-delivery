@@ -1,0 +1,60 @@
+# In-house apps ApplicationSet. Generates one Application per (app x env) from
+# config/environments/*.yaml, injecting the instance's registry (kustomize
+# images) and domain (kustomize patch) into otherwise generic app manifests.
+# A fork edits config/environments/<env>.yaml only.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: inhouse-apps
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - matrix:
+        generators:
+          - git:
+              repoURL: https://github.com/cartyc/app-delivery.git
+              revision: main
+              files:
+                - path: config/environments/*.yaml
+          - list:
+              elements:
+                - app: hello
+                - app: api
+  template:
+    metadata:
+      name: "{{.app}}-{{.env}}"
+      namespace: argocd
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: demo
+      source:
+        repoURL: "{{.repoURL}}"
+        targetRevision: main
+        path: "apps/{{.app}}/overlays/{{.env}}"
+        kustomize:
+          images:
+            - "apps/{{.app}}={{.appsRegistry}}/{{.app}}{{ $i := index .apps .app }}{{ if $i.digest }}@{{ $i.digest }}{{ else }}:{{ $i.tag }}{{ end }}"
+          patches:
+            - target:
+                kind: VirtualService
+                name: "{{.app}}"
+              patch: |-
+                - op: replace
+                  path: /spec/hosts/0
+                  value: "{{.app}}.{{.baseDomain}}"
+      destination:
+        server: "{{.server}}"
+        namespace: "{{.namespace}}"
+  # Conditional syncPolicy needs a text-templated patch (goTemplate can't do
+  # structural conditionals inside the parsed template). autosync=false -> manual.
+  templatePatch: |
+    spec:
+      syncPolicy:
+        {{- if .autosync }}
+        automated:
+          prune: true
+          selfHeal: true
+        {{- end }}

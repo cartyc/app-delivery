@@ -19,28 +19,33 @@ This is the runtime end of a three-repo supply chain:
 ## What lives here
 
 ```
-apps/<app>/                 in-house apps (native Kustomize)
-  base/                       Deployment, Service, ServiceAccount
-  overlays/{dev,prod}/        env pins: image, replicas, hostname, env
-  istio/                      VirtualService, AuthorizationPolicy
-third-party/<chart>/         values for 3rd-party Helm charts (images -> golden)
+config/                      ← the ONLY files a fork edits (see docs/CONFIG.md)
+  environments/{dev,prod}.yaml  per-env: registry, domain, namespace, per-app image pin
+  thirdparty/<name>-<env>.yaml  one file per third-party chart instance
+apps/<app>/                 in-house apps (GENERIC — no registry/domain baked in)
+  base/                       Deployment (image NAME only), Service, ServiceAccount
+  overlays/{dev,prod}/        env-only bits: replicas, APP_ENV (+ prod PDB)
+  istio/                      VirtualService (placeholder host), AuthorizationPolicy
+third-party/<chart>/         registry-agnostic Helm values (registry injected)
 platform/
   namespaces/                 namespaces + PSA + istio-injection
   istio/                      shared ingress Gateway + mesh STRICT mTLS
-  argocd/                     AppProject, app-of-apps, child Applications  ← all ArgoCD config lives here
-environments/{dev,prod}.yaml  per-env knobs (project, region, registry, domain)
-policy/
-  conftest/                   Rego gate (golden-registry-only + hardening)
-  data/registries.yaml        approved registry prefixes
-.github/workflows/validate.yml  render → kubeconform → conftest
+  argocd/                     AppProject, app-of-apps, ApplicationSets  ← all ArgoCD config lives here
+policy/conftest/             Rego gate (golden-registry-only + hardening)
+.github/workflows/validate.yml  render (from config) → kubeconform → conftest
 scripts/validate.sh          run the gate locally
 ```
+
+Registry + domain are **not** baked into the app manifests — the ApplicationSets
+inject them from `config/` at sync time, and CI does the same when it renders.
+So a fork changes `config/`, not dozens of manifests. See **[docs/CONFIG.md](docs/CONFIG.md)**.
 
 ## The golden-registry gate (why this repo has teeth)
 
 `policy/conftest/image_source.rego` fails the build if **any** container image
-isn't from an approved golden registry (`policy/data/registries.yaml`) or isn't
-pinned. It's the delivery-side mirror of golden-image's registry policies:
+isn't from an approved golden registry (the allowlist is generated from `config/`
+at gate time) or isn't pinned. It's the delivery-side mirror of golden-image's
+registry policies:
 
 - **golden-image** decides *what approved images exist*.
 - **app-delivery** enforces *only those get deployed* — at PR time (conftest) and,
@@ -59,35 +64,33 @@ kubectl apply -f platform/argocd/app-of-apps.yaml
 ```
 
 `app-of-apps` then syncs `platform/argocd/applications/` — the `platform`
-Application, each app (`hello-dev`, `hello-prod`), and each third-party chart —
-all from Git. Dev auto-syncs; **prod is promote-by-merge + manual sync**.
+Application plus two **ApplicationSets** (`inhouse-apps`, `thirdparty-charts`)
+that fan out one Application per (app × env) / chart from `config/`. Dev
+auto-syncs; **prod is promote-by-merge + manual sync** (`autosync: false`).
 
 ## Add an in-house app
 
-1. Copy `apps/hello/` to `apps/<yourapp>/`; adjust the Deployment/Service, the
-   Istio host, and the overlay image pins to your golden `apps/` image.
-2. Build it **FROM a golden base** (see `apps/hello/Dockerfile`) and push to the
-   golden `apps/` registry.
-3. Add `hello-dev.yaml`/`hello-prod.yaml`-style Applications under
-   `platform/argocd/applications/`.
+1. Copy `apps/hello/` to `apps/<yourapp>/` (stays generic — image NAME only, no
+   registry/domain). Build it **FROM a golden base** (see `apps/hello/Dockerfile`).
+2. Add `- app: <yourapp>` to the list generator in
+   `platform/argocd/applications/appset-inhouse.yaml`.
+3. Add the image pin under `apps:` in each `config/environments/<env>.yaml`.
 4. `./scripts/validate.sh` — the gate must pass (golden registry, pinned, hardened).
 
 ## Third-party Helm on golden images
 
-See `platform/argocd/applications/thirdparty-redis.yaml` + `third-party/redis/`:
-a multi-source ArgoCD Application pulls the upstream chart but takes its values
-**from this repo**, overriding every image to the golden registry. Verify
-chart↔image compatibility (use Chainguard `-bitnami` variants where the chart
-expects the Bitnami entrypoint).
-
-CI renders every third-party chart (`helm template` from `chart.env` + `values.yaml`)
-and runs the **image-source gate** on the output — so a chart can only ship
-golden-registry images too, not just the in-house apps.
+Add a `config/thirdparty/<name>-<env>.yaml` (chart repo/version + `goldenRegistry`)
+and drop registry-agnostic values in `third-party/<name>/values.yaml`. The
+`thirdparty-charts` ApplicationSet renders the upstream chart with your in-repo
+values and injects `global.imageRegistry` (+ the Bitnami "Secure Images" opt-in)
+as Helm parameters. CI renders each chart and runs the **image-source gate** on
+the output — so a chart can only ship golden-registry images too. Verify
+chart↔image compatibility (use Chainguard `-bitnami` variants where needed).
 
 ## GKE notes
 
-- **Registry:** the golden Artifact Registry mirror (cgr-sync's `DEST_REGISTRY`).
-  Keep `policy/data/registries.yaml` in sync with it.
+- **Registry:** the golden Artifact Registry mirror (cgr-sync's `DEST_REGISTRY`),
+  set in `config/environments/*.yaml`. The conftest allowlist is derived from it.
 - **Ingress:** Istio `Gateway` (ASM-compatible). Swap to the GKE Gateway API +
   Google-managed certs if you prefer; the app VirtualServices stay the same shape.
 - **Workload Identity:** annotate a ServiceAccount with

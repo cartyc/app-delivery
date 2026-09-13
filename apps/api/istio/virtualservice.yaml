@@ -6,7 +6,8 @@ spec:
   gateways:
     - istio-ingress/public-gateway
   hosts:
-    - api.example.com
+    # Placeholder — patched to {{app}}.{{baseDomain}} per env by the ApplicationSet.
+    - set-by-config.invalid
   http:
     - route:
         - destination:

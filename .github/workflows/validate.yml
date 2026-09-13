@@ -27,6 +27,8 @@ jobs:
           sudo mv conftest /usr/local/bin/
           # helm (renders the third-party charts for the image gate)
           curl -sfL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+          # yq (reads the central config in scripts/validate.sh)
+          sudo curl -sfL https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64 -o /usr/local/bin/yq && sudo chmod +x /usr/local/bin/yq
 
       - name: Render + validate + gate
         run: ./scripts/validate.sh

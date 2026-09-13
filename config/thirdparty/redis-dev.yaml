@@ -1,0 +1,15 @@
+# One file per third-party chart instance. Consumed by the third-party
+# ApplicationSet (platform/argocd/applications/appset-thirdparty.yaml) and the
+# CI gate. The golden registry is injected as a Helm parameter, so the chart's
+# values.yaml stays registry-agnostic and portable.
+name: redis
+env: dev
+namespace: demo-dev
+server: https://kubernetes.default.svc
+autosync: true
+repoURL: https://github.com/cartyc/app-delivery.git # for the in-repo values file
+chartRepo: https://charts.bitnami.com/bitnami
+chart: redis
+chartVersion: "20.5.0"
+valuesPath: third-party/redis/values.yaml
+goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden

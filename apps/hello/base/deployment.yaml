@@ -22,8 +22,9 @@ spec:
           type: RuntimeDefault
       containers:
         - name: hello
-          # Golden Artifact Registry image; overlays pin the exact tag/digest.
-          image: us-central1-docker.pkg.dev/gc-golden-demo/apps/hello:0.1.0
+          # Generic image NAME only — the registry + tag/digest are injected per
+          # environment by the inhouse ApplicationSet (from config/environments).
+          image: apps/hello:latest
           ports:
             - name: http
               containerPort: 8080
