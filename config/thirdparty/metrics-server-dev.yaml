@@ -22,3 +22,9 @@ imageRepos:
 # Literal Helm params passed through as-is (e.g. the image tag).
 helmParams:
   image.tag: "v0.7.2"
+# Pull secrets for the PRIVATE golden registry (Artifact Registry). The
+# ApplicationSet maps these to the chart's `imagePullSecrets[N].name` (the common
+# upstream convention). Leave empty on GKE when nodes/Workload Identity can pull
+# from GAR in-project; set names for cross-project or non-GKE clusters. If a
+# chart uses a different key, add it under helmParams instead.
+imagePullSecrets: []

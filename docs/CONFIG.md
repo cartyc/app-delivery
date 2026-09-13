@@ -36,6 +36,25 @@ is just a values/param change — no chart fork.
 Nothing in `apps/`, `platform/`, or `third-party/values` needs editing to adopt
 this in your own org.
 
+## Private registry (Chainguard images from your GAR, not cgr.dev)
+
+Chainguard images are **mirrored into your private Artifact Registry** by
+`cgr-sync` and pulled from there at runtime — nothing pulls from `cgr.dev`
+directly. That's already how the configs work: `goldenRegistry` **is** your
+private GAR, and every image (in-house, third-party, base) resolves under it.
+
+What the configs additionally account for:
+- **Pull auth.** Third-party config carries `imagePullSecrets: []` — the
+  ApplicationSet maps them to the chart's `imagePullSecrets[N].name`. On GKE,
+  in-project GAR pulls are authorized by the node service account, so this stays
+  empty; set names for cross-project or non-GKE clusters. In-house apps use the
+  same pattern on their ServiceAccount (see `apps/hello/base/serviceaccount.yaml`).
+  If a chart uses a non-standard pull-secret key, put it in `helmParams`.
+- **Kyverno signature reads.** Because signatures live in the private GAR, the
+  Kyverno controller needs GAR **read** access to verify them — grant its service
+  account Workload Identity (Artifact Registry Reader) or start it with
+  `--imagePullSecrets`. See `platform/kyverno/verify-golden-signatures.yaml`.
+
 ## How CI stays honest
 `scripts/validate.sh` reads the same `config/` files, renders each app/env exactly
 as the ApplicationSet will (same image + host injection), **generates the conftest

@@ -16,6 +16,12 @@ migration a values change, not a chart fork.
   values + injected image params. CI (`scripts/validate.sh`) does the same and
   runs the **image-source gate** on the output.
 
+## Private registry pull auth
+Chainguard images are pulled from your **private Artifact Registry** (via
+`goldenRegistry`), not cgr.dev. Set `imagePullSecrets` in the config file for
+cross-project/non-GKE clusters; on GKE with in-project GAR it stays empty (node
+SA authorizes the pull). See `docs/CONFIG.md`.
+
 ## Adding another upstream chart
 Copy the config file, set `chartRepo`/`chart`/`chartVersion`, map each image
 param under `imageRepos` to its Chainguard image, add a values file. No manifest

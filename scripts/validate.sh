@@ -81,6 +81,11 @@ for tf in config/thirdparty/*.yaml; do
     v=$(yq -r ".helmParams.\"$k\"" "$tf")
     setargs+=(--set "$k=$v")
   done
+  i=0
+  for s in $(yq -r '.imagePullSecrets // [] | .[]' "$tf"); do
+    setargs+=(--set "imagePullSecrets[$i].name=$s")
+    i=$((i + 1))
+  done
   helm template "$name" "$chart" --repo "$chartRepo" --version "$ver" -n "$ns" -f "$vals" \
     "${setargs[@]}" > "$out"
   data="$render_dir/data-tp-$name"

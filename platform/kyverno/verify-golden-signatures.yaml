@@ -7,6 +7,12 @@
 # are built by your own pipeline; add a second rule verifying them against your
 # CI's signing identity once you sign them.
 #
+# PRIVATE REGISTRY: golden images live in your Artifact Registry (not cgr.dev),
+# so Kyverno must be able to READ from GAR to fetch the signatures. On GKE, give
+# the Kyverno service account Workload Identity with Artifact Registry Reader; or
+# start Kyverno with --imagePullSecrets referencing a GAR pull secret. (Add
+# spec.imageRegistryCredentials / allowInsecureRegistry here only if needed.)
+#
 # Staged as Audit — flip to Enforce once the Policy Reports confirm golden images
 # verify cleanly in your cluster.
 apiVersion: kyverno.io/v1
