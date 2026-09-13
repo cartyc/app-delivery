@@ -1,7 +1,8 @@
 # Third-party charts ApplicationSet. One Application per file in
-# config/thirdparty/*.yaml. Multi-source: upstream chart + in-repo values, with
-# the golden registry injected as a Helm parameter (values.yaml stays
-# registry-agnostic). Add a chart by adding a config file — no manifest edits.
+# config/thirdparty/*.yaml. UPSTREAM charts only — pointed at Chainguard images
+# via per-component image params (imageRepos, prefixed with goldenRegistry) plus
+# literal helmParams. Multi-source: upstream chart + in-repo (registry-agnostic)
+# values. Add a chart by adding a config file — no manifest edits.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -24,26 +25,33 @@ spec:
         - resources-finalizer.argocd.argoproj.io
     spec:
       project: demo
-      sources:
-        - repoURL: "{{.chartRepo}}"
-          chart: "{{.chart}}"
-          targetRevision: "{{.chartVersion}}"
-          helm:
-            valueFiles:
-              - "$values/{{.valuesPath}}"
-            parameters:
-              - name: global.imageRegistry
-                value: "{{.goldenRegistry}}"
-              - name: global.security.allowInsecureImages
-                value: "true"
-        - repoURL: "{{.repoURL}}"
-          targetRevision: main
-          ref: values
       destination:
         server: "{{.server}}"
         namespace: "{{.namespace}}"
+  # sources + helm params + syncPolicy need loops/conditionals, so they're built
+  # in a text-templated patch (goTemplate can't do structural loops in the
+  # parsed template body).
   templatePatch: |
     spec:
+      sources:
+        - repoURL: {{ .chartRepo }}
+          chart: {{ .chart }}
+          targetRevision: "{{ .chartVersion }}"
+          helm:
+            valueFiles:
+              - $values/{{ .valuesPath }}
+            parameters:
+              {{- range $param, $image := .imageRepos }}
+              - name: {{ $param }}
+                value: {{ $.goldenRegistry }}/{{ $image }}
+              {{- end }}
+              {{- range $param, $value := .helmParams }}
+              - name: {{ $param }}
+                value: "{{ $value }}"
+              {{- end }}
+        - repoURL: {{ .repoURL }}
+          targetRevision: main
+          ref: values
       syncPolicy:
         {{- if .autosync }}
         automated:

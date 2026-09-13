@@ -17,11 +17,14 @@ creates one Application per (app × env) and:
 - patches the VirtualService host → `<app>.<baseDomain>`,
 - targets `<server>` / `<namespace>`, with `autosync` controlling the sync policy.
 
-### `config/thirdparty/<name>-<env>.yaml` — third-party charts
-One file per chart instance (chart repo/version, values path, `goldenRegistry`).
-The **`thirdparty-charts` ApplicationSet** renders the upstream chart with the
-in-repo values and injects `global.imageRegistry` (+ Bitnami Secure-Images
-opt-in) as Helm parameters.
+### `config/thirdparty/<name>-<env>.yaml` — third-party charts (upstream only)
+One file per chart instance: chart repo/version, values path, `goldenRegistry`,
+an `imageRepos` map (chart image param → Chainguard image name), and literal
+`helmParams`. The **`thirdparty-charts` ApplicationSet** renders the **upstream
+project chart** (never a vendor repackager like Bitnami) with the in-repo values
+and sets each image param to `<goldenRegistry>/<image>`. Because upstream charts
+use plain `image.repository`/`image.tag`, the eventual move to Chainguard images
+is just a values/param change — no chart fork.
 
 ## Why manifests stay generic
 - `apps/*/base` uses an image **name only** (`apps/<app>:latest`) and a

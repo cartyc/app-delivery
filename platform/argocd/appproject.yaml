@@ -9,8 +9,9 @@ spec:
   description: In-house apps + platform config delivered from app-delivery
   sourceRepos:
     - https://github.com/cartyc/app-delivery.git
-    # Helm repos used by the third-party lane (add as needed):
-    - https://charts.bitnami.com/bitnami
+    # Upstream (project-published) Helm repos used by the third-party lane.
+    # Vendor repackagers (e.g. Bitnami) are intentionally avoided.
+    - https://kubernetes-sigs.github.io/metrics-server/
   destinations:
     - server: https://kubernetes.default.svc
       namespace: demo-dev
@@ -21,11 +22,13 @@ spec:
     - server: https://kubernetes.default.svc
       namespace: istio-system
     - server: https://kubernetes.default.svc
+      namespace: kube-system
+    - server: https://kubernetes.default.svc
       namespace: argocd
   clusterResourceWhitelist:
-    - group: ""
-      kind: Namespace
-    - group: security.istio.io
+    # Permissive within the project (still scoped to this project's Apps).
+    # Tighten to specific groups/kinds for a locked-down environment.
+    - group: "*"
       kind: "*"
   namespaceResourceWhitelist:
     - group: "*"

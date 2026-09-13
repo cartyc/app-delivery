@@ -70,9 +70,19 @@ for tf in config/thirdparty/*.yaml; do
   goldenReg=$(yq -r '.goldenRegistry' "$tf")
   out="$render_dir/tp-${name}-${env}.yaml"
   echo "  - $name/$env ($chart $ver) -> $goldenReg"
+  # Build --set args from config: imageRepos (prefixed with goldenRegistry) +
+  # literal helmParams. Mirrors the thirdparty ApplicationSet exactly.
+  setargs=()
+  for k in $(yq -r '.imageRepos // {} | keys | .[]' "$tf"); do
+    v=$(yq -r ".imageRepos.\"$k\"" "$tf")
+    setargs+=(--set "$k=$goldenReg/$v")
+  done
+  for k in $(yq -r '.helmParams // {} | keys | .[]' "$tf"); do
+    v=$(yq -r ".helmParams.\"$k\"" "$tf")
+    setargs+=(--set "$k=$v")
+  done
   helm template "$name" "$chart" --repo "$chartRepo" --version "$ver" -n "$ns" -f "$vals" \
-    --set global.imageRegistry="$goldenReg" \
-    --set global.security.allowInsecureImages=true > "$out"
+    "${setargs[@]}" > "$out"
   data="$render_dir/data-tp-$name"
   mkdir -p "$data"
   printf 'allowed_registries:\n  - "%s/"\n' "$goldenReg" > "$data/registries.yaml"

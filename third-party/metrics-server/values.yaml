@@ -1,0 +1,15 @@
+# Registry-agnostic values for the UPSTREAM metrics-server chart
+# (kubernetes-sigs). The Chainguard image (image.repository + image.tag) is
+# injected as Helm parameters by the third-party ApplicationSet from
+# config/thirdparty/metrics-server-dev.yaml — so this file stays portable and
+# carries only non-image settings.
+replicas: 1
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 200Mi
+# metrics-server's own securityContext defaults are already nonroot + no
+# privilege escalation; left to the chart.

@@ -1,0 +1,24 @@
+# Third-party chart instance — UPSTREAM chart only (no vendor repackagers like
+# Bitnami). Upstream charts expose plain image.repository/image.tag, so pointing
+# them at Chainguard images is a clean per-component override — no
+# global.imageRegistry or "Secure Images" opt-in needed.
+#
+# Consumed by the thirdparty-charts ApplicationSet + the CI gate.
+name: metrics-server
+env: dev
+namespace: kube-system
+server: https://kubernetes.default.svc
+autosync: true
+repoURL: https://github.com/cartyc/app-delivery.git # for the in-repo values file
+chartRepo: https://kubernetes-sigs.github.io/metrics-server/
+chart: metrics-server
+chartVersion: "3.12.2"
+valuesPath: third-party/metrics-server/values.yaml
+goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+# Chart image-repository params -> Chainguard image name; the ApplicationSet
+# prefixes goldenRegistry. This is how an upstream chart points at golden images.
+imageRepos:
+  image.repository: metrics-server
+# Literal Helm params passed through as-is (e.g. the image tag).
+helmParams:
+  image.tag: "v0.7.2"

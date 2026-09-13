@@ -77,15 +77,21 @@ auto-syncs; **prod is promote-by-merge + manual sync** (`autosync: false`).
 3. Add the image pin under `apps:` in each `config/environments/<env>.yaml`.
 4. `./scripts/validate.sh` — the gate must pass (golden registry, pinned, hardened).
 
-## Third-party Helm on golden images
+## Third-party Helm on golden images (upstream charts only)
 
-Add a `config/thirdparty/<name>-<env>.yaml` (chart repo/version + `goldenRegistry`)
-and drop registry-agnostic values in `third-party/<name>/values.yaml`. The
-`thirdparty-charts` ApplicationSet renders the upstream chart with your in-repo
-values and injects `global.imageRegistry` (+ the Bitnami "Secure Images" opt-in)
-as Helm parameters. CI renders each chart and runs the **image-source gate** on
-the output — so a chart can only ship golden-registry images too. Verify
-chart↔image compatibility (use Chainguard `-bitnami` variants where needed).
+Use the **project's own chart**, never a vendor repackager (Bitnami etc.) —
+upstream charts expose plain `image.repository`/`image.tag`, so pointing them at
+Chainguard images is a clean per-component override (and the eventual
+all-Chainguard migration is a values change, not a chart fork).
+
+Add a `config/thirdparty/<name>-<env>.yaml` (chart repo/version, `goldenRegistry`,
+an `imageRepos` map of *chart image param → Chainguard image name*, and any
+literal `helmParams`) plus registry-agnostic values in
+`third-party/<name>/values.yaml`. The `thirdparty-charts` ApplicationSet renders
+the chart with those values and sets each image param to
+`<goldenRegistry>/<image>`. CI renders each chart the same way and runs the
+**image-source gate** — so a chart can only ship golden-registry images.
+Example: `metrics-server` (kubernetes-sigs). See `third-party/metrics-server/`.
 
 ## GKE notes
 
