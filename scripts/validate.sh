@@ -96,4 +96,40 @@ for tf in config/thirdparty/*.yaml; do
   conftest test --policy policy/conftest/image_source.rego --data "$data" "$out" || fail=1
 done
 
+echo "== platform charts (helm render from config, image gate) =="
+for pf in config/platform-charts/*.yaml; do
+  [ -e "$pf" ] || continue
+  name=$(yq -r '.name' "$pf")
+  ns=$(yq -r '.namespace' "$pf")
+  chartRepo=$(yq -r '.chartRepo' "$pf")
+  chart=$(yq -r '.chart' "$pf")
+  ver=$(yq -r '.chartVersion' "$pf")
+  goldenReg=$(yq -r '.goldenRegistry' "$pf")
+  out="$render_dir/pf-${name}.yaml"
+  echo "  - $name ($chart $ver)"
+  setargs=()
+  for k in $(yq -r '.imageRepos // {} | keys | .[]' "$pf"); do
+    v=$(yq -r ".imageRepos.\"$k\"" "$pf")
+    setargs+=(--set "$k=$goldenReg/$v")
+  done
+  for k in $(yq -r '.registryParams // [] | .[]' "$pf"); do
+    setargs+=(--set "$k=$goldenReg")
+  done
+  for k in $(yq -r '.helmParams // {} | keys | .[]' "$pf"); do
+    v=$(yq -r ".helmParams.\"$k\"" "$pf")
+    setargs+=(--set "$k=$v")
+  done
+  i=0
+  for s in $(yq -r '.imagePullSecrets // [] | .[]' "$pf"); do
+    setargs+=(--set "imagePullSecrets[$i].name=$s")
+    i=$((i + 1))
+  done
+  helm template "$name" "$chart" --repo "$chartRepo" --version "$ver" -n "$ns" \
+    "${setargs[@]}" > "$out"
+  data="$render_dir/data-pf-$name"
+  mkdir -p "$data"
+  printf 'allowed_registries:\n  - "%s/"\n' "$goldenReg" > "$data/registries.yaml"
+  conftest test --policy policy/conftest/image_source.rego --data "$data" "$out" || fail=1
+done
+
 [ "$fail" -eq 0 ] && echo "OK" || { echo "FAILED"; exit 1; }

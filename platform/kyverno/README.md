@@ -16,9 +16,9 @@ violations, then flip to `Enforce`. Same discipline as the golden-image registry
 policies (never enforce blind).
 
 ## Prerequisites
-- **Kyverno installed** (`https://kyverno.io/docs/installation/`) — the CRDs must
-  exist before these ClusterPolicies sync. (Install it on Chainguard `kyverno`
-  images via the upstream chart, following the third-party lane.)
+- **Kyverno** installs itself via the platform-charts lane
+  (`config/platform-charts/kyverno.yaml`) at sync-wave `-20`, so its
+  ClusterPolicy CRDs exist before these policies (`platform/`, wave `0`) sync.
 - **Org UIDP via env var (not committed).** The signature policy reads your org
   UIDP from a ConfigMap (`golden-signing-config` in the `kyverno` namespace) via
   a Kyverno `context` — so no org identifier is in Git. Create it from your env:

@@ -7,6 +7,8 @@ kind: ApplicationSet
 metadata:
   name: inhouse-apps
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10" # apps after platform charts + platform config
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]

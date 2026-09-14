@@ -8,6 +8,8 @@ kind: ApplicationSet
 metadata:
   name: thirdparty-charts
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10" # after platform charts + platform config
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]

@@ -1,0 +1,28 @@
+# Platform chart (cluster prerequisite) — Kyverno, upstream chart on Chainguard
+# images. Its ClusterPolicy CRDs must exist before platform/kyverno/ syncs, so
+# it lands at an early sync-wave. Kyverno splits image.registry/repository per
+# component, so every image is pointed at the golden registry via registryParams
+# (keeps each repo path, just swaps the registry). Verified: renders fully golden.
+name: kyverno
+namespace: kyverno
+server: https://kubernetes.default.svc
+syncWave: "-20"
+chartRepo: https://kyverno.github.io/kyverno/
+chart: kyverno
+chartVersion: 3.3.7
+goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+imageRepos: {}
+# each -> goldenRegistry (controllers + init + hook/cleanup/test helper images)
+registryParams:
+  - image.registry
+  - admissionController.container.image.registry
+  - admissionController.initContainer.image.registry
+  - backgroundController.image.registry
+  - cleanupController.image.registry
+  - reportsController.image.registry
+  - webhooksCleanup.image.registry
+  - policyReportsCleanup.image.registry
+  - test.image.registry
+  - crds.migration.image.registry
+helmParams: {}
+imagePullSecrets: []

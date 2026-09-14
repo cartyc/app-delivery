@@ -17,12 +17,10 @@ ARGOCD_CHART_VERSION="${ARGOCD_CHART_VERSION:-7.7.7}"
 
 echo "==> Prerequisites"
 cat <<'PRE'
-  These provide CRDs the platform config depends on. Install them (on golden
-  images) BEFORE or shortly after this script — ArgoCD will keep retrying until
-  they exist. Wiring them as third-party charts with sync-waves is the next step.
+  cert-manager + Kyverno now install themselves via the platform-charts lane
+  (GitOps, sync-waved) once the app-of-apps below is applied — no manual step.
+  Istio is still a manual prerequisite (its own follow-up):
     - Istio (base + istiod + ingress gateway) OR GKE managed ASM
-    - Kyverno            (ClusterPolicy CRDs for platform/kyverno)
-    - cert-manager       (gateway TLS cert)
 PRE
 
 echo "==> Installing ArgoCD (golden images) -> namespace argocd"
