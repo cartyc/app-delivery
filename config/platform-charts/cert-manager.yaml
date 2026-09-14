@@ -1,0 +1,25 @@
+# Platform chart (cluster prerequisite) — cert-manager, upstream jetstack chart
+# on Chainguard images. Installed by the platform-charts ApplicationSet with a
+# sync-wave so its CRDs exist before anything that uses them (e.g. the gateway
+# Certificate). Verified: renders fully golden.
+name: cert-manager
+namespace: cert-manager
+server: https://kubernetes.default.svc
+syncWave: "-20" # earliest wave: CRDs + controllers first
+chartRepo: https://charts.jetstack.io
+chart: cert-manager
+chartVersion: v1.16.2
+goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+# param -> goldenRegistry/<image> (this chart uses a full image.repository path)
+imageRepos:
+  image.repository: cert-manager-controller
+  webhook.image.repository: cert-manager-webhook
+  cainjector.image.repository: cert-manager-cainjector
+  acmesolver.image.repository: cert-manager-acmesolver
+  startupapicheck.image.repository: cert-manager-startupapicheck
+# param set to just goldenRegistry (for charts that split registry + repository)
+registryParams: []
+# literal Helm params
+helmParams:
+  crds.enabled: "true"
+imagePullSecrets: []

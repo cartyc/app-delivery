@@ -1,9 +1,14 @@
-# Cluster platform config: namespaces + shared Istio (gateway, mesh mTLS).
+# Cluster platform config: namespaces, shared Istio, Kyverno policies, gateway
+# cert. Depends on the platform charts (cert-manager/Kyverno CRDs), so it runs a
+# wave after platform-charts; ServerSideApply + retry let it converge as the
+# CRDs appear.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: platform
   namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -18,3 +23,12 @@ spec:
     automated:
       prune: true
       selfHeal: true
+    syncOptions:
+      - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 5m

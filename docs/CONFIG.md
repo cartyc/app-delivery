@@ -36,6 +36,14 @@ is just a values/param change — no chart fork.
 Nothing in `apps/`, `platform/`, or `third-party/values` needs editing to adopt
 this in your own org.
 
+### `config/platform-charts/<name>.yaml` — cluster prerequisites
+Upstream charts for cluster platform components (cert-manager, Kyverno) on
+Chainguard images, delivered by the **`platform-charts` ApplicationSet** with a
+`syncWave` (CRDs before consumers), ServerSideApply, and retry. Adds a
+`registryParams` image style (set a param to *just* `goldenRegistry`) for charts
+that split `image.registry`/`repository`. See `config/platform-charts/README.md`.
+(Istio is a focused follow-up — its injection model doesn't fit the static gate.)
+
 ## Private registry (Chainguard images from your GAR, not cgr.dev)
 
 Chainguard images are **mirrored into your private Artifact Registry** by

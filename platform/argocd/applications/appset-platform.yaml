@@ -1,0 +1,76 @@
+# Platform charts ApplicationSet — cluster prerequisites (cert-manager, Kyverno,
+# …) as upstream charts on Chainguard images. Like the third-party lane, but
+# adds what cluster infra needs: a sync-wave (from config, so CRDs land before
+# consumers), ServerSideApply (cert-manager/Istio CRDs exceed the client-side
+# apply limit), namespace creation, and generous retry (charts converge as their
+# CRDs appear). One Application per file in config/platform-charts/*.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: platform-charts
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-10" # create the platform charts before platform config + apps
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/cartyc/app-delivery.git
+        revision: main
+        files:
+          - path: config/platform-charts/*.yaml
+  template:
+    metadata:
+      name: "{{.name}}"
+      namespace: argocd
+      annotations:
+        argocd.argoproj.io/sync-wave: "{{.syncWave}}"
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    spec:
+      project: demo
+      source:
+        repoURL: "{{.chartRepo}}"
+        chart: "{{.chart}}"
+        targetRevision: "{{.chartVersion}}"
+      destination:
+        server: "{{.server}}"
+        namespace: "{{.namespace}}"
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+          - ServerSideApply=true
+          - SkipDryRunOnMissingResource=true
+        retry:
+          limit: 10
+          backoff:
+            duration: 15s
+            factor: 2
+            maxDuration: 5m
+  # Helm parameters are a variable-length list built from the config's three
+  # styles, so they're rendered in a text-templated patch.
+  templatePatch: |
+    spec:
+      source:
+        helm:
+          parameters:
+            {{- range $param, $image := .imageRepos }}
+            - name: {{ $param }}
+              value: {{ $.goldenRegistry }}/{{ $image }}
+            {{- end }}
+            {{- range $param := .registryParams }}
+            - name: {{ $param }}
+              value: {{ $.goldenRegistry }}
+            {{- end }}
+            {{- range $param, $value := .helmParams }}
+            - name: {{ $param }}
+              value: "{{ $value }}"
+            {{- end }}
+            {{- range $i, $secret := .imagePullSecrets }}
+            - name: imagePullSecrets[{{ $i }}].name
+              value: "{{ $secret }}"
+            {{- end }}

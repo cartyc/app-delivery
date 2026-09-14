@@ -12,7 +12,8 @@ cluster/                     provision + bootstrap the target cluster
   bootstrap/                  install ArgoCD on golden images → hand off to app-of-apps
 config/                      ← the ONLY files a fork edits (see docs/CONFIG.md)
   environments/{dev,prod}.yaml  per-env: registry, domain, namespace, per-app image pin
-  thirdparty/<name>-<env>.yaml  one file per third-party chart instance
+  thirdparty/<name>-<env>.yaml  one file per third-party (app) chart instance
+  platform-charts/<name>.yaml   cluster prerequisites (cert-manager, Kyverno) — sync-waved
 apps/<app>/                 in-house apps (GENERIC — no registry/domain baked in)
   base/                       Deployment (image NAME only), Service, ServiceAccount
   overlays/{dev,prod}/        env-only bits: replicas, APP_ENV (+ prod PDB)

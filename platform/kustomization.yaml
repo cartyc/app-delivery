@@ -7,3 +7,4 @@ resources:
   - namespaces
   - istio
   - kyverno # Kyverno ClusterPolicies (requires Kyverno installed; see kyverno/README.md)
+  - certs # cert-manager Issuer + gateway Certificate (requires cert-manager)
