@@ -1,0 +1,34 @@
+# Third-party chart instance — UPSTREAM chart only (no vendor repackagers like
+# Bitnami). kube-state-metrics (prometheus-community) splits image.registry from
+# image.repository, so it's pointed at golden with a single registry swap
+# (registryParams → goldenRegistry) while keeping the chart's repository path;
+# the golden mirror lives at goldenRegistry/kube-state-metrics/kube-state-metrics.
+# (metrics-server was the earlier example, but Chainguard doesn't publish it to
+# this org — kube-state-metrics is the available upstream-charted equivalent.)
+#
+# Consumed by the thirdparty-charts ApplicationSet + the CI gate.
+name: kube-state-metrics
+env: dev
+namespace: kube-system
+server: https://kubernetes.default.svc
+autosync: true
+repoURL: https://github.com/cartyc/app-delivery.git # for the in-repo values file
+chartRepo: https://prometheus-community.github.io/helm-charts
+chart: kube-state-metrics
+chartVersion: "8.5.0" # ships app v2.20.0 (matches golden image tag)
+valuesPath: third-party/kube-state-metrics/values.yaml
+goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+# This chart uses a full image.repository path but a SEPARATE image.registry, so
+# swap just the registry (keeps repository "kube-state-metrics/kube-state-metrics").
+imageRepos: {}
+registryParams:
+  - image.registry
+# Literal Helm params. Tag defaults to the chart appVersion (v2.20.0) = the
+# golden tag, but pin it explicitly so the image-source gate sees a fixed tag.
+helmParams:
+  image.tag: "v2.20.0"
+# Pull secrets for the PRIVATE golden registry (Artifact Registry). The
+# ApplicationSet maps these to the chart's `imagePullSecrets[N].name`. Leave empty
+# on GKE when nodes/Workload Identity can pull from GAR in-project; set names for
+# cross-project or non-GKE clusters.
+imagePullSecrets: []

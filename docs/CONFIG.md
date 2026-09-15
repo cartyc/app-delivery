@@ -19,12 +19,15 @@ creates one Application per (app × env) and:
 
 ### `config/thirdparty/<name>-<env>.yaml` — third-party charts (upstream only)
 One file per chart instance: chart repo/version, values path, `goldenRegistry`,
-an `imageRepos` map (chart image param → Chainguard image name), and literal
-`helmParams`. The **`thirdparty-charts` ApplicationSet** renders the **upstream
-project chart** (never a vendor repackager like Bitnami) with the in-repo values
-and sets each image param to `<goldenRegistry>/<image>`. Because upstream charts
-use plain `image.repository`/`image.tag`, the eventual move to Chainguard images
-is just a values/param change — no chart fork.
+and its image override — either an `imageRepos` map (chart image param →
+Chainguard image name, prefixed with `goldenRegistry`) for charts with a full
+`image.repository` path, or `registryParams` (set a param to *just*
+`goldenRegistry`) for charts that split `image.registry`/`repository` (e.g.
+`kube-state-metrics`) — plus literal `helmParams`. The **`thirdparty-charts`
+ApplicationSet** renders the **upstream project chart** (never a vendor
+repackager like Bitnami) with the in-repo values and injects those image params.
+Because upstream charts use plain image values, the eventual move to Chainguard
+images is just a values/param change — no chart fork.
 
 ## Why manifests stay generic
 - `apps/*/base` uses an image **name only** (`apps/<app>:latest`) and a

@@ -32,7 +32,16 @@ allowed(image) if {
 	startswith(image, prefix)
 }
 
+# Helm test hooks (helm.sh/hook: test) are never applied by Argo CD sync — they
+# only run on an explicit `helm test` — so they're out of scope for the
+# deployed-image gate. (e.g. Kyverno's readiness-checker test pods.)
+is_test_hook if {
+	hook := object.get(input.metadata, "annotations", {})
+	contains(object.get(hook, "helm.sh/hook", ""), "test")
+}
+
 deny contains msg if {
+	not is_test_hook
 	some c in all_containers
 	not allowed(c.image)
 	msg := sprintf("%s/%s: image %q is not from an approved golden registry", [input.kind, c.name, c.image])
@@ -40,6 +49,7 @@ deny contains msg if {
 
 # Pinned: must carry a digest, or a tag that isn't "latest". (Digest preferred.)
 deny contains msg if {
+	not is_test_hook
 	some c in all_containers
 	not contains(c.image, "@sha256:")
 	endswith(c.image, ":latest")
@@ -47,6 +57,7 @@ deny contains msg if {
 }
 
 deny contains msg if {
+	not is_test_hook
 	some c in all_containers
 	not contains(c.image, "@sha256:")
 	not contains(c.image, ":")

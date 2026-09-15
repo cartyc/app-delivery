@@ -77,6 +77,9 @@ for tf in config/thirdparty/*.yaml; do
     v=$(yq -r ".imageRepos.\"$k\"" "$tf")
     setargs+=(--set "$k=$goldenReg/$v")
   done
+  for k in $(yq -r '.registryParams // [] | .[]' "$tf"); do
+    setargs+=(--set "$k=$goldenReg")
+  done
   for k in $(yq -r '.helmParams // {} | keys | .[]' "$tf"); do
     v=$(yq -r ".helmParams.\"$k\"" "$tf")
     setargs+=(--set "$k=$v")

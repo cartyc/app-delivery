@@ -1,0 +1,15 @@
+# Registry-agnostic values for the UPSTREAM kube-state-metrics chart
+# (prometheus-community). The Chainguard image is pointed at golden by the
+# third-party ApplicationSet (image.registry → goldenRegistry, tag via
+# helmParams) from config/thirdparty/kube-state-metrics-dev.yaml — so this file
+# stays portable and carries only non-image settings.
+replicas: 1
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 200Mi
+# kube-state-metrics' chart defaults already run nonroot with no privilege
+# escalation and a read-only root FS; left to the chart.

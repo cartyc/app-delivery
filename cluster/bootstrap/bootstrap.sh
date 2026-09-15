@@ -13,7 +13,7 @@ cd "$(dirname "$0")/../.." # repo root
 # Golden registry (Chainguard-image mirror) — from the env, not hardcoded.
 # Use the terraform output: GOLDEN_REGISTRY="$(terraform -chdir=cluster/terraform output -raw golden_registry)"
 : "${GOLDEN_REGISTRY:?set GOLDEN_REGISTRY (e.g. terraform output golden_registry)}"
-ARGOCD_CHART_VERSION="${ARGOCD_CHART_VERSION:-7.7.7}"
+ARGOCD_CHART_VERSION="${ARGOCD_CHART_VERSION:-10.9.1}" # ships ArgoCD v3.5.3 (matches golden image)
 
 echo "==> Prerequisites"
 cat <<'PRE'
