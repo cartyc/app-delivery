@@ -9,3 +9,15 @@ github_repo = "cartyc/app-delivery"
 # node_machine_type = "e2-standard-4"
 # min_nodes = 1
 # max_nodes = 3
+
+# Private cluster (default true): private nodes + Cloud NAT; images from GAR.
+# private_cluster  = true
+# master_ipv4_cidr = "172.16.0.0/28"
+# Restrict the public control-plane endpoint to your admin/CI ranges:
+# master_authorized_cidrs = [
+#   { cidr_block = "203.0.113.10/32", display_name = "admin" },
+# ]
+
+# GKE Security Posture dashboards (BASIC is free):
+# security_posture_mode               = "BASIC"
+# security_posture_vulnerability_mode = "VULNERABILITY_BASIC"
