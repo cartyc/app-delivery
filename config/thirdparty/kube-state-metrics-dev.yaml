@@ -1,8 +1,8 @@
 # Third-party chart instance — UPSTREAM chart only (no vendor repackagers like
 # Bitnami). kube-state-metrics (prometheus-community) splits image.registry from
 # image.repository, so it's pointed at golden with a single registry swap
-# (registryParams → goldenRegistry) while keeping the chart's repository path;
-# the golden mirror lives at goldenRegistry/kube-state-metrics/kube-state-metrics.
+# (registryParams → goldenRegistry), and image.repository is set to the golden
+# name; the golden mirror keeps it flat at goldenRegistry/kube-state-metrics.
 # (metrics-server was the earlier example, but Chainguard doesn't publish it to
 # this org — kube-state-metrics is the available upstream-charted equivalent.)
 #
@@ -17,18 +17,21 @@ chartRepo: https://prometheus-community.github.io/helm-charts
 chart: kube-state-metrics
 chartVersion: "8.5.0" # ships app v2.20.0 (matches golden image tag)
 valuesPath: third-party/kube-state-metrics/values.yaml
-goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
-# This chart uses a full image.repository path but a SEPARATE image.registry, so
-# swap just the registry (keeps repository "kube-state-metrics/kube-state-metrics").
+goldenRegistry: ghcr.io/cartyc/golden
+# This chart splits image.registry from image.repository (default
+# "kube-state-metrics/kube-state-metrics"): swap the registry, and set the
+# repository to the flat golden name in helmParams.
 imageRepos: {}
 registryParams:
   - image.registry
 # Literal Helm params. Tag defaults to the chart appVersion (v2.20.0) = the
 # golden tag, but pin it explicitly so the image-source gate sees a fixed tag.
 helmParams:
+  image.repository: kube-state-metrics
   image.tag: "v2.20.0"
-# Pull secrets for the PRIVATE golden registry (Artifact Registry). The
-# ApplicationSet maps these to the chart's `imagePullSecrets[N].name`. Leave empty
-# on GKE when nodes/Workload Identity can pull from GAR in-project; set names for
-# cross-project or non-GKE clusters.
-imagePullSecrets: []
+# Pull secret for the PRIVATE golden registry (ghcr.io), created by
+# cluster/bootstrap/bootstrap.sh in this namespace. The ApplicationSet maps it to
+# the chart's `<imagePullSecretsParam>[N].name`.
+imagePullSecretsParam: imagePullSecrets
+imagePullSecrets:
+  - ghcr-pull

@@ -4,13 +4,17 @@ region      = "us-central1"
 cluster_name = "golden"
 github_repo = "cartyc/app-delivery"
 
+# Optional GCP registry plumbing (both default false). The default registry is
+# private ghcr.io, pulled with the ghcr-pull secret, so you don't need these.
+# enable_artifact_registry = true   # GAR golden/apps repos + node/Kyverno read
+# enable_github_wif        = true   # GitHub Actions -> GCP federation (CI writes to GAR)
 # golden_repo_name = "golden"
 # apps_repo_name   = "apps"
 # node_machine_type = "e2-standard-4"
 # min_nodes = 1
 # max_nodes = 3
 
-# Private cluster (default true): private nodes + Cloud NAT; images from GAR.
+# Private cluster (default true): private nodes + Cloud NAT; images from ghcr.io via NAT.
 # private_cluster  = true
 # master_ipv4_cidr = "172.16.0.0/28"
 # Restrict the public control-plane endpoint to your admin/CI ranges:

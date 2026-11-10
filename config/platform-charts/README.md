@@ -15,11 +15,14 @@ as the third-party lane, but with what cluster infra needs:
 | Field | Produces | Use for |
 |---|---|---|
 | `imageRepos: {param: name}` | `param = <goldenRegistry>/<name>` | charts with a full `image.repository` (cert-manager) |
-| `registryParams: [param, …]` | `param = <goldenRegistry>` | charts that split `image.registry` + `repository` (Kyverno) |
+| `registryParams: [param, …]` | `param = <goldenRegistry>` | charts that split `image.registry` + `repository` (Kyverno; each component's flat golden repository is set in `helmParams`) |
 | `helmParams: {param: value}` | `param = value` (literal) | flags, tags, etc. |
 
-`imagePullSecrets: [name, …]` maps to `imagePullSecrets[N].name` for the private
-registry. CI (`scripts/validate.sh`) renders each chart the same way and runs the
+`imagePullSecrets: [name, …]` maps to `<imagePullSecretsParam>[N].name` for the
+private registry. The param is the chart's own value path:
+`global.imagePullSecrets` for cert-manager and Kyverno, whose top-level
+`imagePullSecrets` is a credentials map it would create itself. Both set
+`ghcr-pull`, which bootstrap creates (`docs/PULL-SECRET.md`). CI (`scripts/validate.sh`) renders each chart the same way and runs the
 golden-registry image gate — both cert-manager and Kyverno render fully golden
 (verified).
 

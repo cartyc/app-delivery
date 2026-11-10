@@ -13,9 +13,8 @@ chart fork.
 ## How it's wired
 - `config/thirdparty/kube-state-metrics-dev.yaml` — chart coords + `registryParams`
   (`image.registry` → `goldenRegistry`) because this chart splits registry from
-  repository; keeps the chart repository path so the golden mirror lives at
-  `goldenRegistry/kube-state-metrics/kube-state-metrics`. Plus `helmParams`
-  (literal passthrough, e.g. the tag). Charts with a *full* `image.repository`
+  repository, and `helmParams` setting `image.repository` to the flat golden
+  name (`goldenRegistry/kube-state-metrics`) plus the tag. Charts with a *full* `image.repository`
   path instead use `imageRepos` (see `docs/CONFIG.md`).
 - `values.yaml` here — registry-agnostic settings only (replicas, resources).
 - The `thirdparty-charts` ApplicationSet renders the upstream chart with these
@@ -23,10 +22,10 @@ chart fork.
   runs the **image-source gate** on the output.
 
 ## Private registry pull auth
-Chainguard images are pulled from your **private Artifact Registry** (via
-`goldenRegistry`), not cgr.dev. Set `imagePullSecrets` in the config file for
-cross-project/non-GKE clusters; on GKE with in-project GAR it stays empty (node
-SA authorizes the pull). See `docs/CONFIG.md`.
+Chainguard images are pulled from the **private golden mirror** on ghcr.io (via
+`goldenRegistry`), not cgr.dev. The config sets `imagePullSecrets: [ghcr-pull]`
+under the chart's `imagePullSecrets` value; bootstrap creates that Secret in
+`kube-system` (`docs/PULL-SECRET.md`).
 
 ## Adding another upstream chart
 Copy the config file, set `chartRepo`/`chart`/`chartVersion`, point its image at

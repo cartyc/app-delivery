@@ -7,11 +7,13 @@
 # are built by your own pipeline; add a second rule verifying them against your
 # CI's signing identity once you sign them.
 #
-# PRIVATE REGISTRY: golden images live in your Artifact Registry (not cgr.dev),
-# so Kyverno must be able to READ from GAR to fetch the signatures. On GKE, give
-# the Kyverno service account Workload Identity with Artifact Registry Reader; or
-# start Kyverno with --imagePullSecrets referencing a GAR pull secret. (Add
-# spec.imageRegistryCredentials / allowInsecureRegistry here only if needed.)
+# PRIVATE REGISTRY: golden images live in private ghcr.io packages (not
+# cgr.dev). cgr-sync mirrors each image's Chainguard signature and attestations
+# next to it as cosign `sha256-<digest>.sig` / `.att` tags, so Kyverno verifies
+# against the same keyless identity. To READ them it uses the `ghcr-pull` pull
+# secret: the kyverno chart starts it with --imagePullSecrets=ghcr-pull
+# (config/platform-charts/kyverno.yaml, existingImagePullSecrets), and
+# bootstrap creates that Secret in the kyverno namespace.
 #
 # ORG UIDP NOT HARDCODED: the signing-identity regexp reads the org UIDP from a
 # ConfigMap (golden-signing-config in the kyverno namespace) via a Kyverno
@@ -51,7 +53,7 @@ spec:
             namespace: kyverno
       verifyImages:
         - imageReferences:
-            - "us-central1-docker.pkg.dev/gc-golden-demo/golden/*"
+            - "ghcr.io/cartyc/golden/*"
           required: true
           mutateDigest: true # pin the verified digest into the pod spec
           verifyDigest: true

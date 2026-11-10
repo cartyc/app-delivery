@@ -59,7 +59,7 @@ spec:
                 value: "{{ $value }}"
               {{- end }}
               {{- range $i, $secret := .imagePullSecrets }}
-              - name: imagePullSecrets[{{ $i }}].name
+              - name: "{{ $.imagePullSecretsParam }}[{{ $i }}].name"
                 value: "{{ $secret }}"
               {{- end }}
         - repoURL: {{ .repoURL }}

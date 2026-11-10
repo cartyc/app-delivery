@@ -9,26 +9,26 @@ output "cluster_get_credentials" {
 }
 
 output "golden_registry" {
-  description = "Set as goldenRegistry in config/environments/*.yaml + config/thirdparty/*.yaml."
-  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${var.golden_repo_name}"
+  description = "Artifact Registry golden repo (enable_artifact_registry only; null otherwise — the default is ghcr.io/<owner>/golden)."
+  value       = var.enable_artifact_registry ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.golden_repo_name}" : null
 }
 
 output "apps_registry" {
-  description = "Set as appsRegistry in config/environments/*.yaml."
-  value       = "${var.region}-docker.pkg.dev/${var.project_id}/${var.apps_repo_name}"
+  description = "Artifact Registry apps repo (enable_artifact_registry only; null otherwise — the default is ghcr.io/<owner>/apps)."
+  value       = var.enable_artifact_registry ? "${var.region}-docker.pkg.dev/${var.project_id}/${var.apps_repo_name}" : null
 }
 
 output "wif_provider" {
-  description = "Renovate secret GCP_WIF_PROVIDER."
-  value       = google_iam_workload_identity_pool_provider.github.name
+  description = "GCP_WIF_PROVIDER for a GAR-based fork (enable_github_wif only)."
+  value       = var.enable_github_wif ? google_iam_workload_identity_pool_provider.github[0].name : null
 }
 
 output "ci_service_account" {
-  description = "Renovate secret GCP_SA_EMAIL."
-  value       = google_service_account.ci.email
+  description = "GCP_SA_EMAIL for a GAR-based fork (enable_github_wif only)."
+  value       = var.enable_github_wif ? google_service_account.ci[0].email : null
 }
 
 output "kyverno_reader_service_account" {
-  description = "Annotate the Kyverno KSAs with iam.gke.io/gcp-service-account = this."
-  value       = google_service_account.kyverno_reader.email
+  description = "Annotate the Kyverno KSAs with iam.gke.io/gcp-service-account = this (enable_artifact_registry only)."
+  value       = var.enable_artifact_registry ? google_service_account.kyverno_reader[0].email : null
 }

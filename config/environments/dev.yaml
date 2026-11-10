@@ -8,16 +8,15 @@ namespace: demo-dev
 server: https://kubernetes.default.svc
 autosync: true
 repoURL: https://github.com/cartyc/app-delivery.git
-goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
-appsRegistry: us-central1-docker.pkg.dev/gc-golden-demo/apps
-cgrOrg: gc-golden-demo
+goldenRegistry: ghcr.io/cartyc/golden
+appsRegistry: ghcr.io/cartyc/apps
 baseDomain: dev.example.com
 # Per-app image pin for this env. dev pins by tag (Renovate bumps these);
 # prod pins by digest (promotion — see docs/PROMOTION.md).
 apps:
   hello:
-    # renovate: datasource=docker depName=us-central1-docker.pkg.dev/gc-golden-demo/apps/hello
+    # renovate: datasource=docker depName=ghcr.io/cartyc/apps/hello
     tag: "0.1.0"
   api:
-    # renovate: datasource=docker depName=us-central1-docker.pkg.dev/gc-golden-demo/apps/api
+    # renovate: datasource=docker depName=ghcr.io/cartyc/apps/api
     tag: "0.1.0"

@@ -47,24 +47,30 @@ Chainguard images, delivered by the **`platform-charts` ApplicationSet** with a
 that split `image.registry`/`repository`. See `config/platform-charts/README.md`.
 (Istio is a focused follow-up — its injection model doesn't fit the static gate.)
 
-## Private registry (Chainguard images from your GAR, not cgr.dev)
+## Private registry (Chainguard images from private ghcr.io, not cgr.dev)
 
-Chainguard images are **mirrored into your private Artifact Registry** by
-`cgr-sync` and pulled from there at runtime — nothing pulls from `cgr.dev`
-directly. That's already how the configs work: `goldenRegistry` **is** your
-private GAR, and every image (in-house, third-party, base) resolves under it.
+Chainguard images are **mirrored into private GitHub packages**
+(`ghcr.io/<owner>/golden/<image>`) by golden-image's `cgr-sync`, and pulled from
+there at runtime. Nothing pulls from `cgr.dev` directly, and the gate rejects it.
+`goldenRegistry` **is** that mirror, and every chart and base image resolves
+under it. In-house images live in `appsRegistry` (`ghcr.io/<owner>/apps`).
+
+Each image keeps its cgr.dev name, flat (`golden/kyverno-background-controller`,
+not `golden/kyverno/background-controller`). So charts whose default
+repositories are nested (Kyverno, kube-state-metrics) set each component's
+`image.repository` in `helmParams` and swap the registry with `registryParams`.
 
 What the configs additionally account for:
-- **Pull auth.** Third-party config carries `imagePullSecrets: []` — the
-  ApplicationSet maps them to the chart's `imagePullSecrets[N].name`. On GKE,
-  in-project GAR pulls are authorized by the node service account, so this stays
-  empty; set names for cross-project or non-GKE clusters. In-house apps use the
-  same pattern on their ServiceAccount (see `apps/hello/base/serviceaccount.yaml`).
-  If a chart uses a non-standard pull-secret key, put it in `helmParams`.
-- **Kyverno signature reads.** Because signatures live in the private GAR, the
-  Kyverno controller needs GAR **read** access to verify them — grant its service
-  account Workload Identity (Artifact Registry Reader) or start it with
-  `--imagePullSecrets`. See `platform/kyverno/verify-golden-signatures.yaml`.
+- **Pull auth.** Every chart config carries `imagePullSecrets: [ghcr-pull]` and
+  `imagePullSecretsParam`: the chart's own value path (`global.imagePullSecrets`
+  for cert-manager and Kyverno, `imagePullSecrets` for kube-state-metrics). The
+  ApplicationSet maps them to `<imagePullSecretsParam>[N].name`. In-house apps
+  carry the secret on their ServiceAccount. Bootstrap creates the Secret from
+  your token ([PULL-SECRET.md](PULL-SECRET.md)).
+- **Kyverno signature reads.** Signatures live next to the images in the private
+  registry, so Kyverno reads them with the same secret
+  (`existingImagePullSecrets` in `config/platform-charts/kyverno.yaml`). See
+  `platform/kyverno/verify-golden-signatures.yaml`.
 
 ## How CI stays honest
 `scripts/validate.sh` reads the same `config/` files, renders each app/env exactly
@@ -74,7 +80,7 @@ drift from what actually deploys.
 
 ## Forking checklist
 1. Edit `config/environments/*.yaml` and `config/thirdparty/*.yaml` (registry,
-   domain, project, cgrOrg, repoURL, clusters, image pins).
+   domain, repoURL, clusters, image pins).
 2. Set the `repoURL` in the two ApplicationSets + `platform/argocd/appproject.yaml`
    + `app-of-apps.yaml` to your fork. (`scripts/setup.sh` does all of this from
    flags — see the README.)
