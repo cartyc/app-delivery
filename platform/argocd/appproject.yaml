@@ -25,6 +25,11 @@ spec:
       namespace: istio-system
     - server: https://kubernetes.default.svc
       namespace: kube-system
+    # Platform charts (config/platform-charts/*.yaml set these namespaces).
+    - server: https://kubernetes.default.svc
+      namespace: cert-manager
+    - server: https://kubernetes.default.svc
+      namespace: kyverno
     - server: https://kubernetes.default.svc
       namespace: argocd
   clusterResourceWhitelist:
