@@ -5,17 +5,20 @@ Stands up the GKE cluster + the GCP plumbing app-delivery needs:
 - **GKE cluster** (VPC-native, **private nodes**, Workload Identity, shielded
   auto-repair/upgrade node pool with autoscaling) + a least-privilege node SA.
 - **Private nodes + Cloud NAT** (`private_cluster = true`): nodes have no public
-  IPs. Images pull from Artifact Registry (Private Google Access); NAT covers the
-  remaining public egress ArgoCD needs (Git + upstream chart repos). Set
+  IPs. Images pull from private ghcr.io (`ghcr.io/<owner>/golden` and `/apps`)
+  through the NAT, with the `ghcr-pull` secret that bootstrap creates
+  (`docs/PULL-SECRET.md`). The NAT also covers ArgoCD's Git + chart egress. Set
   `private_cluster = false` for a public demo cluster.
 - **GKE Security Posture** (`BASIC` by default): misconfiguration + workload
   vulnerability scanning, surfaced in the built-in Security Posture dashboard.
-- **Artifact Registry** repos: `golden` (cgr-sync mirror of Chainguard images)
-  and `apps` (in-house images), with node read + CI write IAM.
-- **Workload Identity federation** for GitHub Actions (Renovate + image
-  build/push) — no service-account keys.
-- **Kyverno → Artifact Registry reader** GSA + WI binding, so the signature
-  policy can fetch signatures from the private registry.
+
+**Optional, off by default.** These are for a fork that mirrors into Google
+Artifact Registry instead of ghcr.io:
+
+| Variable (default `false`) | Creates |
+|---|---|
+| `enable_artifact_registry` | Artifact Registry repos `golden` + `apps`, node read IAM, and the Kyverno → AR reader GSA + Workload Identity binding |
+| `enable_github_wif` | Workload Identity Federation for GitHub Actions + the CI service account (with `enable_artifact_registry`, CI write/read on the repos) |
 
 ## Use
 ```bash
@@ -25,19 +28,17 @@ terraform init
 terraform plan
 terraform apply
 ```
-Prereqs: enable the `container`, `artifactregistry`, `iam`, and
-`iamcredentials` APIs; run as a principal with project admin. Configure a GCS
+Prereqs: enable the `container` API (plus `artifactregistry`, `iam` and
+`iamcredentials` if you turn on the optional pieces); run as a principal with project admin. Configure a GCS
 backend in `versions.tf` for shared state.
 
 ## Outputs → the rest of the system
 | Output | Where it goes |
 |---|---|
-| `golden_registry` | `goldenRegistry` in `config/environments/*.yaml` + `config/thirdparty/*.yaml` |
-| `apps_registry` | `appsRegistry` in `config/environments/*.yaml` |
-| `wif_provider` | Renovate secret `GCP_WIF_PROVIDER` |
-| `ci_service_account` | Renovate secret `GCP_SA_EMAIL` |
-| `kyverno_reader_service_account` | annotate the Kyverno KSAs `iam.gke.io/gcp-service-account` |
 | `cluster_get_credentials` | run it to get kubeconfig, then `cluster/bootstrap/` |
+| `golden_registry`, `apps_registry` | `enable_artifact_registry` only (else `null`): `goldenRegistry` / `appsRegistry` in `config/` |
+| `wif_provider`, `ci_service_account` | `enable_github_wif` only (else `null`): CI secrets for a GAR-based fork |
+| `kyverno_reader_service_account` | `enable_artifact_registry` only (else `null`): annotate the Kyverno KSAs `iam.gke.io/gcp-service-account` |
 
 ## Notes
 - **Service mesh:** this provisions the cluster; install Istio (or enable GKE
@@ -49,5 +50,5 @@ backend in `versions.tf` for shared state.
   `master_authorized_cidrs` (your admin/CI IPs). `bootstrap.sh` / `kubectl` /
   ArgoCD must connect from an allowed range. For a fully-private endpoint, set
   `enable_private_endpoint = true` and reach it via a bastion/VPN.
-- **Private Google Access** must be enabled on the node subnet for image pulls
-  to stay off NAT; Cloud NAT is the fallback path.
+- With `enable_artifact_registry`, enable **Private Google Access** on the node
+  subnet so GAR pulls stay off NAT. ghcr.io pulls always use the NAT.

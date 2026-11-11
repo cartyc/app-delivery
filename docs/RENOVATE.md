@@ -25,20 +25,21 @@ so automation can't smuggle in a non-golden image.
 ## How it runs
 
 Self-hosted via `.github/workflows/renovate.yml` (Mondays + `workflow_dispatch`).
-Self-hosted because the images live in **private** registries — Renovate authenticates to:
-
-- **Artifact Registry** via Workload Identity Federation (`google-github-actions/auth`),
-- **cgr.dev** via `chainctl` (an org pull token),
-
-and injects both as masked `RENOVATE_HOST_RULES` so it can read tags.
+Self-hosted because the in-house app images live in **private** ghcr.io packages.
+Renovate reads their tags with the job's own `GITHUB_TOKEN` (`packages: read`),
+injected as a masked `RENOVATE_HOST_RULES` entry for `ghcr.io`. There is no
+stored registry credential, no Google Cloud identity, and no `cgr.dev` login:
+nothing Renovate manages lives on `cgr.dev` (Dockerfile golden bases are left
+alone, see above).
 
 ### Setup (one-time, your side)
-Secrets: `RENOVATE_TOKEN` (GitHub App/PAT), `GCP_WIF_PROVIDER`, `GCP_SA_EMAIL`
-(Artifact Registry reader), `CHAINGUARD_IDENTITY`, `CHAINGUARD_ORG_UIDP`.
-Variable: `GAR_HOST` (e.g. `us-central1-docker.pkg.dev`).
-
-> Reuses the WIF wiring from `passthrough-mirror` (golden-image) — same provider
-> + a reader SA. If you haven't set WIF up yet, that's the shared prerequisite.
+- Secret `RENOVATE_TOKEN` (GitHub App token or fine-grained PAT with contents +
+  pull-requests write) to open PRs.
+- For each in-house app package (`ghcr.io/cartyc/apps/<app>`), open
+  `https://github.com/users/cartyc/packages/container/apps%2F<app>/settings`.
+  Under **Manage Actions access**, add `cartyc/app-delivery` with the **Read**
+  role. Without it, the job's `GITHUB_TOKEN` gets 403 and Renovate sees no
+  tags.
 
 ## The loop
 

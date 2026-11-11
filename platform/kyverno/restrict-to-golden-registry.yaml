@@ -1,5 +1,8 @@
 # Admission twin of the conftest image-source gate: in golden-enforced
-# namespaces, every container image must come from the golden registry.
+# namespaces, every container image must come from the private golden registry
+# (ghcr.io/<owner>/golden) or the private apps registry (ghcr.io/<owner>/apps).
+# Both prefixes end in "/", so look-alikes such as ghcr.io/<owner>/golden-x
+# don't match.
 # Scoped by namespace LABEL (enforcement: golden) so GKE/system namespaces
 # (kube-system, istio-system, gke-managed) are never affected.
 #
@@ -15,8 +18,9 @@ metadata:
     policies.kyverno.io/severity: high
     policies.kyverno.io/category: Supply Chain Security
     policies.kyverno.io/description: >-
-      Every container in a golden-enforced namespace must pull from the golden
-      registry (the cgr-sync destination). Blocks arbitrary/public images.
+      Every container in a golden-enforced namespace must pull from the private
+      golden registry (the cgr-sync destination) or the private in-house apps
+      registry. Blocks arbitrary/public images.
 spec:
   validationFailureAction: Audit
   background: true
@@ -33,12 +37,13 @@ spec:
       validate:
         message: >-
           Images in this namespace must come from the golden registry
-          (us-central1-docker.pkg.dev/gc-golden-demo/).
+          (ghcr.io/cartyc/golden/) or the in-house apps registry
+          (ghcr.io/cartyc/apps/).
         pattern:
           spec:
             =(ephemeralContainers):
-              - image: "us-central1-docker.pkg.dev/gc-golden-demo/*"
+              - image: "ghcr.io/cartyc/golden/* | ghcr.io/cartyc/apps/*"
             =(initContainers):
-              - image: "us-central1-docker.pkg.dev/gc-golden-demo/*"
+              - image: "ghcr.io/cartyc/golden/* | ghcr.io/cartyc/apps/*"
             containers:
-              - image: "us-central1-docker.pkg.dev/gc-golden-demo/*"
+              - image: "ghcr.io/cartyc/golden/* | ghcr.io/cartyc/apps/*"

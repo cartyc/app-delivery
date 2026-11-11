@@ -1,28 +1,50 @@
 # Platform chart (cluster prerequisite) — Kyverno, upstream chart on Chainguard
 # images. Its ClusterPolicy CRDs must exist before platform/kyverno/ syncs, so
-# it lands at an early sync-wave. Kyverno splits image.registry/repository per
-# component, so every image is pointed at the golden registry via registryParams
-# (keeps each repo path, just swaps the registry). Verified: renders fully golden.
+# it lands at an early sync-wave.
+#
+# Kyverno's per-component images all inherit `global.image.registry` (default
+# reg.kyverno.io) and default to nested repository paths like
+# `kyverno/background-controller`. The golden mirror keeps each image FLAT,
+# under its cgr.dev name (golden/kyverno-background-controller, …), so the
+# registry swap points everything at golden and helmParams set each
+# component's repository to its golden name. The image tag defaults to the
+# chart appVersion (v1.19.2), which is exactly the golden tag.
+#
+# The `test` and `webhooksCleanup` hooks use ghcr.io/kyverno/readiness-checker,
+# which the golden mirror doesn't carry, so they're disabled (optional helm
+# test / pre-delete cleanup jobs). Verified: renders fully golden.
 name: kyverno
 namespace: kyverno
 server: https://kubernetes.default.svc
 syncWave: "-20"
 chartRepo: https://kyverno.github.io/kyverno/
 chart: kyverno
-chartVersion: 3.3.7
-goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+chartVersion: 3.9.2 # ships Kyverno v1.19.2 (matches golden image tags)
+goldenRegistry: ghcr.io/cartyc/golden
 imageRepos: {}
-# each -> goldenRegistry (controllers + init + hook/cleanup/test helper images)
+# single global registry swap -> every component image resolves under golden
 registryParams:
-  - image.registry
-  - admissionController.container.image.registry
-  - admissionController.initContainer.image.registry
-  - backgroundController.image.registry
-  - cleanupController.image.registry
-  - reportsController.image.registry
-  - webhooksCleanup.image.registry
-  - policyReportsCleanup.image.registry
-  - test.image.registry
-  - crds.migration.image.registry
-helmParams: {}
-imagePullSecrets: []
+  - global.image.registry
+helmParams:
+  # golden names (flat) for each component, under global.image.registry
+  admissionController.container.image.repository: kyverno
+  admissionController.initContainer.image.repository: kyvernopre
+  backgroundController.image.repository: kyverno-background-controller
+  cleanupController.image.repository: kyverno-cleanup-controller
+  reportsController.image.repository: kyverno-reports-controller
+  crds.migration.image.repository: kyverno-cli
+  # keep the golden mirror the only image source: these two hooks pull
+  # ghcr.io/kyverno/readiness-checker
+  webhooksCleanup.enabled: "false"
+  test.enabled: "false"
+  # The signature policy (platform/kyverno/verify-golden-signatures.yaml) reads
+  # signatures from the private golden registry with the same pull secret
+  # (--imagePullSecrets=ghcr-pull, looked up in the kyverno namespace).
+  existingImagePullSecrets[0]: ghcr-pull
+# Pull secret for the private golden registry, created by
+# cluster/bootstrap/bootstrap.sh in this namespace. Kyverno's chart takes it as
+# global.imagePullSecrets (its top-level imagePullSecrets is something else: a
+# map of registry credentials it would create itself).
+imagePullSecretsParam: global.imagePullSecrets
+imagePullSecrets:
+  - ghcr-pull

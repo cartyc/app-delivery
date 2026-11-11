@@ -1,5 +1,5 @@
-# Cloud NAT for private nodes' egress. Golden images come from Artifact Registry
-# via Private Google Access; NAT covers the remaining public egress ArgoCD needs
+# Cloud NAT for private nodes' egress. Golden and app images come from ghcr.io,
+# so image pulls go through NAT, as does the other public egress ArgoCD needs
 # (Git + upstream Helm chart repos). Only created for a private cluster.
 resource "google_compute_router" "nat" {
   count   = var.private_cluster ? 1 : 0

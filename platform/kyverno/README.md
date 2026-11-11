@@ -6,7 +6,7 @@ this repo). Two policies:
 
 | Policy | What | Scope |
 |---|---|---|
-| `restrict-to-golden-registry` | Every image must come from the golden registry | Namespaces labelled `enforcement: golden` (app namespaces) — GKE/system namespaces untouched |
+| `restrict-to-golden-registry` | Every image must come from `ghcr.io/<owner>/golden/` or `ghcr.io/<owner>/apps/` | Namespaces labelled `enforcement: golden` (app namespaces) — GKE/system namespaces untouched |
 | `verify-golden-image-signatures` | cosign **keyless** verify golden images against your org's Chainguard identity (`issuer.enforce.dev`) | Image reference `…/golden/*`, cluster-wide — non-golden images ignored |
 
 ## Staged as Audit → Enforce
@@ -28,9 +28,18 @@ policies (never enforce blind).
   Kyverno's ServiceAccount needs `get`/`list` on that ConfigMap.
 
 ## Signature verification notes
-- Golden images keep their Chainguard signatures through `cgr-sync` (it preserves
-  signatures/attestations), so they verify against
-  `issuer: https://issuer.enforce.dev` + your org's signing identities.
+- Golden images keep their Chainguard signatures through `cgr-sync`, which
+  mirrors them as cosign `sha256-<digest>.sig` / `.att` tags beside each image
+  in `ghcr.io/<owner>/golden`. So they verify against
+  `issuer: https://issuer.enforce.dev` and your org's signing identities, as on
+  cgr.dev.
+- The golden packages are **private**, so Kyverno reads signatures with the
+  `ghcr-pull` secret in the `kyverno` namespace (`--imagePullSecrets=ghcr-pull`,
+  set by `config/platform-charts/kyverno.yaml`; see `docs/PULL-SECRET.md`).
+- `golden/static` comes from Chainguard's public catalog, signed by a different
+  identity. It's a build-time base for `apps/hello` and never runs as a pod,
+  so the policy never sees it. Don't run it directly: it would fail
+  verification.
 - In-house `apps/*` images are built by your pipeline — add a second
   `verifyImages` rule matching `…/apps/*` against your CI's signing identity once
   you sign them.

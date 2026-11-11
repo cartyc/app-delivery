@@ -1,8 +1,11 @@
 # Third-party charts ApplicationSet. One Application per file in
 # config/thirdparty/*.yaml. UPSTREAM charts only — pointed at Chainguard images
-# via per-component image params (imageRepos, prefixed with goldenRegistry) plus
-# literal helmParams. Multi-source: upstream chart + in-repo (registry-agnostic)
-# values. Add a chart by adding a config file — no manifest edits.
+# via per-component image params: imageRepos (repository → goldenRegistry/<image>)
+# for charts with a full image.repository path, or registryParams (→ just
+# goldenRegistry) for charts that split image.registry/repository (e.g.
+# kube-state-metrics); plus literal helmParams. Multi-source: upstream chart +
+# in-repo (registry-agnostic) values. Add a chart by adding a config file — no
+# manifest edits.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -47,12 +50,16 @@ spec:
               - name: {{ $param }}
                 value: {{ $.goldenRegistry }}/{{ $image }}
               {{- end }}
+              {{- range $param := .registryParams }}
+              - name: {{ $param }}
+                value: {{ $.goldenRegistry }}
+              {{- end }}
               {{- range $param, $value := .helmParams }}
               - name: {{ $param }}
                 value: "{{ $value }}"
               {{- end }}
               {{- range $i, $secret := .imagePullSecrets }}
-              - name: imagePullSecrets[{{ $i }}].name
+              - name: "{{ $.imagePullSecretsParam }}[{{ $i }}].name"
                 value: "{{ $secret }}"
               {{- end }}
         - repoURL: {{ .repoURL }}

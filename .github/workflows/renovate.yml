@@ -1,19 +1,15 @@
 # Self-hosted Renovate. Runs on a schedule and on demand, opening dependency PRs
 # that then flow through the same Validate gate (golden-registry + hardening).
 #
-# Self-hosted (not the Mend app) because the images live in PRIVATE registries —
-# Renovate needs to auth to Artifact Registry (via Workload Identity Federation)
-# and cgr.dev (via chainctl) to see new tags.
+# Self-hosted (not the Mend app) because the in-house app images live in
+# PRIVATE ghcr.io packages: Renovate reads their tags with this job's
+# GITHUB_TOKEN (`packages: read`). That needs no stored registry credential, but
+# each apps/<app> package must grant this repository Read under its "Manage
+# Actions access" (docs/RENOVATE.md). Chart versions come from public Helm repos.
 #
-# Required secrets:
-#   RENOVATE_TOKEN         GitHub App token or fine-grained PAT (contents +
-#                          pull-requests write) used to open PRs.
-#   GCP_WIF_PROVIDER       Workload Identity provider resource name.
-#   GCP_SA_EMAIL           service account with Artifact Registry reader.
-#   CHAINGUARD_IDENTITY    assumable identity for cgr.dev pulls.
-#   CHAINGUARD_ORG_UIDP    org UIDP (the cgr.dev pull username).
-# Required variable:
-#   GAR_HOST               e.g. us-central1-docker.pkg.dev
+# Required secret:
+#   RENOVATE_TOKEN   GitHub App token or fine-grained PAT (contents +
+#                    pull-requests write) used to open PRs.
 name: Renovate
 on:
   schedule:
@@ -30,37 +26,18 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # WIF + chainctl
+      packages: read # read private ghcr.io app-image tags with GITHUB_TOKEN
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      - name: Auth to Google Cloud (WIF)
-        uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2
-        with:
-          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
-          service_account: ${{ secrets.GCP_SA_EMAIL }}
-
-      - name: Set up Cloud SDK
-        uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2
-
-      - name: Auth to Chainguard (cgr.dev)
-        uses: chainguard-dev/setup-chainctl@2cddd35a2f120d9973e58094dc6878c93cf58c28 # v0.5.1
-        with:
-          identity: ${{ secrets.CHAINGUARD_IDENTITY }}
-
       - name: Build registry host rules (masked)
         env:
-          GAR_HOST: ${{ vars.GAR_HOST }}
-          ORG: ${{ secrets.CHAINGUARD_ORG_UIDP }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          gar="$(gcloud auth print-access-token)"
-          cgr="$(chainctl auth token --audience cgr.dev)"
-          echo "::add-mask::$gar"
-          echo "::add-mask::$cgr"
-          rules="$(jq -c -n --arg gar "$gar" --arg cgr "$cgr" --arg garhost "$GAR_HOST" --arg org "$ORG" \
-            '[{matchHost:$garhost,hostType:"docker",username:"oauth2accesstoken",password:$gar},
-              {matchHost:"cgr.dev",hostType:"docker",username:$org,password:$cgr}]')"
+          rules="$(jq -c -n --arg user "$GITHUB_ACTOR" --arg pass "$GITHUB_TOKEN" \
+            '[{matchHost:"ghcr.io",hostType:"docker",username:$user,password:$pass}]')"
+          echo "::add-mask::$rules"
           echo "RENOVATE_HOST_RULES=$rules" >> "$GITHUB_ENV"
 
       - name: Renovate

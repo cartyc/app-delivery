@@ -1,6 +1,7 @@
 # Build the in-house `api` service on the golden python base (distroless,
 # nonroot, daily-rebuilt). Stdlib-only, so no dependency install step.
-ARG GOLDEN_REGISTRY=us-central1-docker.pkg.dev/gc-golden-demo/golden
+# GOLDEN_REGISTRY: the private golden mirror (see apps/hello/Dockerfile).
+ARG GOLDEN_REGISTRY=ghcr.io/cartyc/golden
 FROM ${GOLDEN_REGISTRY}/python:latest
 WORKDIR /app
 COPY src/main.py /app/main.py

@@ -5,7 +5,7 @@ variable "project_id" {
 
 variable "region" {
   type        = string
-  description = "GKE + Artifact Registry region."
+  description = "GKE (and optional Artifact Registry) region."
   default     = "us-central1"
 }
 
@@ -44,21 +44,36 @@ variable "max_nodes" {
   default = 3
 }
 
+# --- Optional GCP registry plumbing (off by default) ---
+# The default registry is private ghcr.io (ghcr.io/<owner>/golden + /apps),
+# pulled with the `ghcr-pull` image pull secret, so neither is needed.
+variable "enable_artifact_registry" {
+  type        = bool
+  description = "Create Artifact Registry golden/apps repos, node reader IAM and the Kyverno AR-reader GSA (for a fork that mirrors into GAR instead of ghcr.io)."
+  default     = false
+}
+
+variable "enable_github_wif" {
+  type        = bool
+  description = "Create the GitHub Actions Workload Identity Federation pool/provider and CI service account (CI writes to GAR; pairs with enable_artifact_registry)."
+  default     = false
+}
+
 variable "golden_repo_name" {
   type        = string
-  description = "Artifact Registry repo holding the mirrored Chainguard (golden) images."
+  description = "Artifact Registry repo holding the mirrored Chainguard (golden) images (enable_artifact_registry)."
   default     = "golden"
 }
 
 variable "apps_repo_name" {
   type        = string
-  description = "Artifact Registry repo holding in-house app images."
+  description = "Artifact Registry repo holding in-house app images (enable_artifact_registry)."
   default     = "apps"
 }
 
 variable "github_repo" {
   type        = string
-  description = "owner/repo allowed to federate via Workload Identity (CI: renovate, image build/push)."
+  description = "owner/repo allowed to federate via Workload Identity (enable_github_wif)."
   default     = "cartyc/app-delivery"
 }
 
@@ -70,7 +85,7 @@ variable "kyverno_namespace" {
 # --- Private cluster (images pulled from GAR, nodes have no public IPs) ---
 variable "private_cluster" {
   type        = bool
-  description = "Private nodes (no external IPs) + Cloud NAT for egress. Images come from GAR."
+  description = "Private nodes (no external IPs) + Cloud NAT for egress (images from ghcr.io go through NAT)."
   default     = true
 }
 

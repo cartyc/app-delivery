@@ -8,8 +8,8 @@ server: https://kubernetes.default.svc
 syncWave: "-20" # earliest wave: CRDs + controllers first
 chartRepo: https://charts.jetstack.io
 chart: cert-manager
-chartVersion: v1.16.2
-goldenRegistry: us-central1-docker.pkg.dev/gc-golden-demo/golden
+chartVersion: v1.21.3 # matches golden cert-manager image tag
+goldenRegistry: ghcr.io/cartyc/golden
 # param -> goldenRegistry/<image> (this chart uses a full image.repository path)
 imageRepos:
   image.repository: cert-manager-controller
@@ -22,4 +22,9 @@ registryParams: []
 # literal Helm params
 helmParams:
   crds.enabled: "true"
-imagePullSecrets: []
+# Pull secret for the private golden registry, created by
+# cluster/bootstrap/bootstrap.sh in this namespace. Mapped to the chart's
+# global.imagePullSecrets[N].name.
+imagePullSecretsParam: global.imagePullSecrets
+imagePullSecrets:
+  - ghcr-pull

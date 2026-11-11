@@ -27,13 +27,13 @@ resource "google_container_cluster" "primary" {
   }
 
   # Workload Identity: lets KSAs impersonate GSAs (used for app GCP access +
-  # Kyverno reading signatures from Artifact Registry).
+  # Kyverno reading signatures from the optional Artifact Registry).
   workload_identity_config {
     workload_pool = "${var.project_id}.svc.id.goog"
   }
 
-  # Private nodes: no external IPs. Images pull from Artifact Registry (via
-  # Private Google Access / Cloud NAT); public egress (charts, Git) goes through
+  # Private nodes: no external IPs. Images pull from ghcr.io (with the
+  # `ghcr-pull` secret) and public egress (charts, Git) goes through
   # the Cloud NAT in network.tf. Control-plane keeps a public endpoint, so
   # restrict it with master_authorized_cidrs.
   dynamic "private_cluster_config" {
@@ -74,8 +74,8 @@ resource "google_service_account" "nodes" {
   display_name = "GKE node service account for ${var.cluster_name}"
 }
 
-# Least-privilege node roles (logging/monitoring); Artifact Registry read is
-# granted per-repo in artifact-registry.tf.
+# Least-privilege node roles (logging/monitoring); Artifact Registry read (only
+# with enable_artifact_registry) is granted per-repo in artifact-registry.tf.
 resource "google_project_iam_member" "nodes" {
   for_each = toset([
     "roles/logging.logWriter",

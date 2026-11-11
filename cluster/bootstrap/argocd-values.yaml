@@ -1,13 +1,14 @@
 # ArgoCD installed on golden (Chainguard) images. Consumed by
 # cluster/bootstrap/bootstrap.sh, which injects the image REPOSITORIES from
-# $GOLDEN_REGISTRY via --set — so no registry/project/repo is hardcoded here.
-# This file carries only registry-agnostic settings (tags + params).
+# $GOLDEN_REGISTRY and the `ghcr-pull` pull secret via --set — so no
+# registry/project/repo is hardcoded here. This file carries only
+# registry-agnostic settings (tags + params).
 global:
   image:
-    tag: "v3.1"
+    tag: "v3.5.7" # golden argocd tag (mirrored from cgr.dev/chriscarty.com/argocd)
 redis:
   image:
-    tag: "8.0"
+    tag: "v8.8.4" # golden redis tag
 dex:
   enabled: false # keep the demo minimal; wire SSO later
 configs:
